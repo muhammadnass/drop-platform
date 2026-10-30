@@ -88,6 +88,7 @@ interface RiderDashboardProps {
 
 // ── Vehicle Tier Icon Map ─────────────────────────────────────
 const TIER_EMOJI: Record<VehicleTier, string> = {
+  DROP_TRI: '🛺',
   DROP_MINI: '🏍️',
   DROP_FLEX: '🚗',
   DROP_MAX:  '🚐',
