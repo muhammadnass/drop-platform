@@ -52,7 +52,7 @@ async function suggest(query: string, proximity?: [number, number]): Promise<Map
   try {
     const prox = proximity ? `&proximity=${proximity[0]},${proximity[1]}` : '';
     const r = await fetch(
-      `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?country=ng&limit=5&types=address,place,poi,neighborhood,locality${prox}&access_token=${MAPBOX_TOKEN}`
+      `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?country=ng&limit=5&types=address,place,poi,neighborhood,locality,district,region,postcode${prox}&access_token=${MAPBOX_TOKEN}`
     );
     const d = await r.json();
     return d.features ?? [];
