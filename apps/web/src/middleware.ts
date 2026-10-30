@@ -6,7 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
-const PUBLIC_PATHS  = ['/auth/login', '/auth/register', '/'];
+const PUBLIC_PATHS  = ['/auth/login', '/auth/register', '/', '/dashboard/customer'];
 const ROLE_PATHS: Record<string, string[]> = {
   SUPER_ADMIN:    ['/dashboard/admin'],
   MANAGER:        ['/dashboard/manager'],
