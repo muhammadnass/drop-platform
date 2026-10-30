@@ -15,6 +15,7 @@ export const DEFAULT_COMMISSION_PCT = 8;
 
 // Tier multipliers — kept in sync with DB RateConfig
 export const TIER_MULTIPLIERS: Record<VehicleTier, number> = {
+  DROP_TRI: 1.2,
   DROP_MINI: 1.0,
   DROP_FLEX: 1.5,
   DROP_MAX:  2.2,
