@@ -10,7 +10,7 @@ import Link from 'next/link';
 import { Eye, EyeOff, Loader2, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
-export default function LoginPage() {
+function LoginPageInner() {
   const router       = useRouter();
   const searchParams = useSearchParams();
   const { login, isLoading, user } = useAuth();
@@ -141,4 +141,10 @@ export default function LoginPage() {
       </p>
     </div>
   );
+}
+
+
+import { Suspense } from 'react';
+export default function LoginPage() {
+  return <Suspense><LoginPageInner /></Suspense>;
 }

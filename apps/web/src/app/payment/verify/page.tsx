@@ -8,7 +8,7 @@ import { CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 
 type State = 'loading' | 'success' | 'failed';
 
-export default function PaymentVerifyPage() {
+function PaymentVerifyPageInner() {
   const { token, isHydrated } = useAuth();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -101,4 +101,10 @@ export default function PaymentVerifyPage() {
       )}
     </div>
   );
+}
+
+
+import { Suspense } from 'react';
+export default function PaymentVerifyPage() {
+  return <Suspense><PaymentVerifyPageInner /></Suspense>;
 }
