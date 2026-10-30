@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --safe-area-top: env(safe-area-inset-top, 0px);
+    --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  * { box-sizing: border-box; }
+  body { @apply bg-drop-cream text-drop-ink; }
+}
+
+@layer utilities {
+  .pt-safe { padding-top: var(--safe-area-top); }
+  .pb-safe { padding-bottom: var(--safe-area-bottom); }
+}
