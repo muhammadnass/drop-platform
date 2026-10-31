@@ -13,6 +13,7 @@ RUN apt-get update -qq && \
 COPY package.json ./
 RUN npm install --include=dev
 COPY prisma ./prisma
+ENV DATABASE_URL="postgresql://user:password@localhost:5432/db"
 RUN ./node_modules/.bin/prisma generate
 COPY . .
 RUN npm run build
