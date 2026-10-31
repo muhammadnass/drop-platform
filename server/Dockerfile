@@ -10,7 +10,7 @@ RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y build-essential node-gyp openssl pkg-config python-is-python3
 COPY package.json ./
 RUN npm install --include=dev
-COPY prisma .
+COPY prisma ./prisma
 RUN ./node_modules/.bin/prisma generate
 COPY . .
 RUN npm run build
