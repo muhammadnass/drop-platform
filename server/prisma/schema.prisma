@@ -1,0 +1,534 @@
+// ============================================================
+// DROP LOGISTICS — Prisma Schema
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum Role {
+  SUPER_ADMIN
+  MANAGER
+  BUSINESS_OWNER
+  RIDER
+  CUSTOMER
+}
+
+enum VehicleType {
+  MOTORBIKE   // Drop Mini
+  CAR         // Drop Flex
+  TRICYCLE    // Drop Tri
+  MINIVAN     // Drop Max
+}
+
+enum VehicleTier {
+  DROP_MINI   // Motorbikes
+  DROP_TRI    // Tricycles
+  DROP_FLEX   // Cars/Sedans
+  DROP_MAX    // Vans/Pickups
+}
+
+enum DeliveryStatus {
+  PENDING
+  ACCEPTED
+  ARRIVED_PICKUP   // Rider at pickup location
+  PICKED_UP
+  IN_TRANSIT
+  DELIVERED
+  CANCELLED
+  FAILED
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  TRIALING
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  REFUNDED
+  FAILED
+}
+
+enum WalletTransactionType {
+  CREDIT      // Earnings from delivery
+  DEBIT       // Withdrawal
+  BONUS
+  PENALTY
+  REVERSAL
+  COMMISSION  // 8% platform fee deducted on delivery complete
+  TOPUP       // Wallet funded via Paystack
+}
+
+enum MessageType {
+  TEXT
+  SYSTEM
+  VOICE_NOTE
+}
+
+enum CallStatus {
+  INITIATED
+  RINGING
+  ACTIVE
+  ENDED
+  MISSED
+}
+
+enum KycType {
+  NIN
+  BVN
+}
+
+enum KycStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+// ============================================================
+// MODELS
+// ============================================================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  phone         String?   @unique
+  passwordHash  String
+  name          String
+  avatarUrl     String?
+  role          Role
+  isActive      Boolean   @default(true)
+  languagePref  String    @default("en") // "en" | "ha"
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  business              Business?         @relation("BusinessOwner")
+  managedBusiness       Business?         @relation("BusinessManager")
+  riderProfile          RiderProfile?
+  customerProfile       CustomerProfile?
+  deliveriesAsCustomer  Delivery[]        @relation("CustomerDeliveries")
+  deliveriesAsRider     Delivery[]        @relation("RiderDeliveries")
+  sessions              Session[]
+  sentMessages          Message[]         @relation("SentMessages")
+  initiatedCalls        Call[]            @relation("CallerCalls")
+  receivedCalls         Call[]            @relation("ReceiverCalls")
+  founderAccount        FounderAccount?
+
+  @@index([email])
+  @@index([role])
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@map("sessions")
+}
+
+model Business {
+  id            String   @id @default(cuid())
+  ownerId       String   @unique
+  managerId     String?  @unique  // Optional manager user
+  name          String
+  logoUrl       String?
+  description   String?
+  address       String?
+  website       String?
+  industry      String?           // e.g. "Restaurant", "E-commerce", "Pharmacy"
+  isVerified    Boolean  @default(false)
+  customBranding Json?            // { primaryColor, logoUrl, welcomeMsg }
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  owner        User           @relation("BusinessOwner", fields: [ownerId], references: [id])
+  manager      User?          @relation("BusinessManager", fields: [managerId], references: [id])
+  subscription Subscription?
+  riders       RiderProfile[]
+  deliveries   Delivery[]
+
+  @@map("businesses")
+}
+
+model Subscription {
+  id                 String             @id @default(cuid())
+  businessId         String             @unique
+  status             SubscriptionStatus @default(TRIALING)
+  monthlyFeeUsd      Float              @default(20.00)
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  stripeCustomerId   String?
+  stripeSubId        String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id])
+
+  @@map("subscriptions")
+}
+
+model RiderProfile {
+  id                   String      @id @default(cuid())
+  userId               String      @unique
+  businessId           String?
+  vehicleType          VehicleType @default(MOTORBIKE)
+  vehicleTier          VehicleTier @default(DROP_MINI)
+  vehiclePlate         String?
+  vehicleModel         String?
+  vehicleColor         String?
+  licenseNumber        String?
+
+  // Photos
+  profilePhotoUrl      String?
+  vehiclePlatePhotoUrl String?
+
+  // KYC
+  kycType              KycType?
+  kycValue             String?     // NIN or BVN value (store hashed in prod)
+  kycStatus            KycStatus   @default(PENDING)
+  kycSubmittedAt       DateTime?
+  kycVerifiedAt        DateTime?
+
+  isOnline        Boolean      @default(false)
+  isVerified      Boolean      @default(false)
+  lastLatitude    Float?
+  lastLongitude   Float?
+  lastSeenAt      DateTime?
+  rating          Float        @default(5.0)
+  totalDeliveries Int          @default(0)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id])
+  business Business? @relation(fields: [businessId], references: [id])
+  wallet   Wallet?
+
+  @@index([isOnline])
+  @@index([businessId])
+  @@map("rider_profiles")
+}
+
+model Wallet {
+  id                  String   @id @default(cuid())
+  riderId             String   @unique
+  balanceNgn          Float    @default(0.0)
+  lifetimeEarningsNgn Float    @default(0.0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  rider        RiderProfile        @relation(fields: [riderId], references: [id])
+  transactions WalletTransaction[]
+
+  @@map("wallets")
+}
+
+model WalletTransaction {
+  id           String                @id @default(cuid())
+  walletId     String
+  type         WalletTransactionType
+  amountNgn    Float
+  balanceAfter Float
+  description  String
+  deliveryId   String?
+  paystackRef  String?               // For TOPUP transactions
+  createdAt    DateTime              @default(now())
+
+  wallet Wallet @relation(fields: [walletId], references: [id])
+
+  @@index([walletId])
+  @@map("wallet_transactions")
+}
+
+model CustomerProfile {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  defaultAddress String?
+  totalOrders    Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user   User            @relation(fields: [userId], references: [id])
+  wallet CustomerWallet?
+
+  @@map("customer_profiles")
+}
+
+model CustomerWallet {
+  id                String   @id @default(cuid())
+  customerId        String   @unique // CustomerProfile.id
+  balanceNgn        Float    @default(0.0)
+  lifetimeTopupNgn  Float    @default(0.0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  customer     CustomerProfile              @relation(fields: [customerId], references: [id])
+  transactions CustomerWalletTransaction[]
+
+  @@map("customer_wallets")
+}
+
+model CustomerWalletTransaction {
+  id           String                @id @default(cuid())
+  walletId     String
+  type         WalletTransactionType
+  amountNgn    Float
+  balanceAfter Float
+  description  String
+  deliveryId   String?
+  paystackRef  String?
+  createdAt    DateTime              @default(now())
+
+  wallet CustomerWallet @relation(fields: [walletId], references: [id])
+
+  @@index([walletId])
+  @@map("customer_wallet_transactions")
+}
+
+model Delivery {
+  id               String         @id @default(cuid())
+  customerId       String
+  riderId          String?
+  businessId       String?
+  vehicleTier      VehicleTier
+  status           DeliveryStatus @default(PENDING)
+
+  // Pickup
+  pickupAddress    String
+  pickupLat        Float
+  pickupLng        Float
+
+  // Primary Dropoff (kept for single-stop backward compatibility)
+  dropoffAddress   String
+  dropoffLat       Float
+  dropoffLng       Float
+
+  // Pricing
+  distanceKm       Float
+  baseFareNgn      Float
+  ratePerKmNgn     Float
+  tierMultiplier   Float
+  totalFareNgn     Float
+  platformFeeNgn   Float
+  riderEarningsNgn Float
+
+  // Item info
+  itemDescription  String?
+  recipientName    String?
+  recipientPhone   String?
+
+  // Payment method: WALLET or CASH/TRANSFER
+  paymentMethod    String    @default("CASH") // "CASH" | "WALLET"
+
+  // ETA (seconds from acceptance)
+  estimatedPickupSecs   Int?
+  estimatedDeliverySecs Int?
+  acceptedAt            DateTime?
+  arrivedPickupAt       DateTime?
+  pickedUpAt            DateTime?
+  deliveredAt           DateTime?
+  cancelledAt           DateTime?
+
+  paymentStatus        PaymentStatus @default(PENDING)
+  notes                String?
+  cancellationReasonId String?
+  cancellationNote     String?    // Custom typed reason
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  customer           User                @relation("CustomerDeliveries", fields: [customerId], references: [id])
+  rider              User?               @relation("RiderDeliveries", fields: [riderId], references: [id])
+  business           Business?           @relation(fields: [businessId], references: [id])
+  cancellationReason CancellationReason? @relation(fields: [cancellationReasonId], references: [id])
+  messages           Message[]
+  calls              Call[]
+  stops              DeliveryStop[]      // Multi-stop delivery stops (excluding pickup)
+  photos             DeliveryPhoto[]     // Item photos
+
+  @@index([customerId])
+  @@index([riderId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("deliveries")
+}
+
+// Additional delivery stops for multi-stop deliveries
+model DeliveryStop {
+  id             String  @id @default(cuid())
+  deliveryId     String
+  sortOrder      Int     // 1, 2, 3... for ordering stops
+  address        String
+  lat            Float
+  lng            Float
+  recipientName  String?
+  recipientPhone String?
+  notes          String?
+  distanceKm     Float   // Distance from previous stop (or pickup for first stop)
+  fareNgn        Float   // Fare for this leg
+  isDelivered    Boolean @default(false)
+  deliveredAt    DateTime?
+
+  delivery Delivery @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+
+  @@index([deliveryId])
+  @@map("delivery_stops")
+}
+
+// Item photos attached to a delivery (taken by customer at booking)
+model DeliveryPhoto {
+  id         String   @id @default(cuid())
+  deliveryId String
+  url        String
+  caption    String?
+  uploadedBy String   // User.id of the uploader
+  createdAt  DateTime @default(now())
+
+  delivery Delivery @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+
+  @@index([deliveryId])
+  @@map("delivery_photos")
+}
+
+model CancellationReason {
+  id         String  @id @default(cuid())
+  code       String  @unique
+  label      String
+  labelHausa String? // Hausa translation
+  forRole    Role    // Which role sees this reason
+  isActive   Boolean @default(true)
+  sortOrder  Int     @default(0)
+
+  deliveries Delivery[]
+
+  @@map("cancellation_reasons")
+}
+
+model Message {
+  id           String      @id @default(cuid())
+  deliveryId   String
+  senderId     String
+  type         MessageType @default(TEXT)
+  content      String      // Text for TEXT/SYSTEM, description for VOICE_NOTE
+  voiceNoteUrl String?     // For VOICE_NOTE type only
+  durationSecs Int?        // Voice note duration in seconds
+  readAt       DateTime?
+  createdAt    DateTime    @default(now())
+
+  delivery Delivery @relation(fields: [deliveryId], references: [id])
+  sender   User     @relation("SentMessages", fields: [senderId], references: [id])
+
+  @@index([deliveryId])
+  @@map("messages")
+}
+
+model Call {
+  id           String     @id @default(cuid())
+  deliveryId   String
+  callerId     String
+  receiverId   String
+  status       CallStatus @default(INITIATED)
+  durationSecs Int?
+  startedAt    DateTime?
+  endedAt      DateTime?
+  createdAt    DateTime   @default(now())
+
+  delivery Delivery @relation(fields: [deliveryId], references: [id])
+  caller   User     @relation("CallerCalls", fields: [callerId], references: [id])
+  receiver User     @relation("ReceiverCalls", fields: [receiverId], references: [id])
+
+  @@index([deliveryId])
+  @@map("calls")
+}
+
+model RateConfig {
+  id              String       @id @default(cuid())
+  vehicleTier     VehicleTier  @unique
+  vehicleType     VehicleType?
+  tierMultiplier  Float
+  tierLabel       String
+  tierDescription String
+  maxWeightKg     Float?
+  isActive        Boolean      @default(true)
+  updatedAt       DateTime     @updatedAt
+  updatedBy       String?
+
+  @@map("rate_configs")
+}
+
+model PlatformConfig {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
+  updatedBy   String?
+
+  @@map("platform_configs")
+}
+
+model DispatchLog {
+  id         String   @id @default(cuid())
+  deliveryId String
+  event      String
+  payload    Json
+  createdAt  DateTime @default(now())
+
+  @@index([deliveryId])
+  @@map("dispatch_logs")
+}
+
+// ============================================================
+// FOUNDER ACCOUNTS — 4 founders, 25% profit share each
+// ============================================================
+
+model FounderAccount {
+  id           String   @id @default(cuid())
+  userId       String   @unique  // Linked to a User (admin/owner)
+  name         String
+  sharePercent Float    @default(25.0) // 25% each
+  balanceNgn   Float    @default(0.0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user         User               @relation(fields: [userId], references: [id])
+  transactions ProfitTransaction[]
+
+  @@map("founder_accounts")
+}
+
+// Profit split transactions — each delivery completion creates 4 rows (one per founder)
+model ProfitTransaction {
+  id               String   @id @default(cuid())
+  founderAccountId String
+  deliveryId       String
+  commissionNgn    Float    // Total 8% commission from this delivery
+  shareNgn         Float    // 25% of commission credited to this founder
+  balanceAfter     Float
+  createdAt        DateTime @default(now())
+
+  founderAccount FounderAccount @relation(fields: [founderAccountId], references: [id])
+
+  @@index([founderAccountId])
+  @@index([deliveryId])
+  @@map("profit_transactions")
+}
