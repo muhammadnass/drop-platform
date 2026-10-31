@@ -5,6 +5,7 @@ LABEL fly_launch_runtime="Node.js/Prisma"
 WORKDIR /app
 ENV NODE_ENV="production"
 ENV HOME="/root"
+ENV CHECKPOINT_DISABLE="1"
 
 FROM base AS build
 RUN apt-get update -qq && \
