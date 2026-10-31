@@ -4,6 +4,7 @@ FROM node:${NODE_VERSION}-slim AS base
 LABEL fly_launch_runtime="Node.js/Prisma"
 WORKDIR /app
 ENV NODE_ENV="production"
+ENV HOME="/root"
 
 FROM base AS build
 RUN apt-get update -qq && \
