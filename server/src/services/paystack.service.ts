@@ -8,6 +8,7 @@ const BASE = 'https://api.paystack.co';
 interface PaystackHeaders {
   Authorization: string;
   'Content-Type': string;
+  [key: string]: string;
 }
 
 function headers(): PaystackHeaders {
@@ -42,7 +43,7 @@ export async function paystackInitialize(params: {
     headers: headers(),
     body:    JSON.stringify(body),
   });
-  const json = await res.json();
+  const json = await res.json() as any;
   if (!json.status) throw new Error(json.message ?? 'Paystack initialize failed');
   return json.data as { authorization_url: string; access_code: string; reference: string };
 }
@@ -52,7 +53,7 @@ export async function paystackVerify(reference: string) {
   const res = await fetch(`${BASE}/transaction/verify/${encodeURIComponent(reference)}`, {
     headers: headers(),
   });
-  const json = await res.json();
+  const json = await res.json() as any;
   if (!json.status) throw new Error(json.message ?? 'Paystack verify failed');
   return json.data as {
     status: string;          // 'success' | 'failed' | 'abandoned'
@@ -73,7 +74,7 @@ export async function paystackCreatePlan(params: {
 }) {
   // Check if plan already exists
   const listRes = await fetch(`${BASE}/plan?perPage=50`, { headers: headers() });
-  const listJson = await listRes.json();
+  const listJson = await listRes.json() as any;
   if (listJson.status) {
     const existing = listJson.data.find((p: any) => p.name === params.name);
     if (existing) return existing as { plan_code: string; name: string };
@@ -89,7 +90,7 @@ export async function paystackCreatePlan(params: {
       description: params.description,
     }),
   });
-  const json = await res.json();
+  const json = await res.json() as any;
   if (!json.status) throw new Error(json.message ?? 'Paystack create plan failed');
   return json.data as { plan_code: string; name: string };
 }

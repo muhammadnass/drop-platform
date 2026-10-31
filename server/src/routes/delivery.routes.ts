@@ -153,7 +153,10 @@ router.post('/', requireRole('CUSTOMER', 'BUSINESS_OWNER'), async (req: AuthRequ
 
     // Deduct from customer wallet if paying by wallet
     if (d.paymentMethod === 'WALLET') {
-      const profile = await tx.customerProfile.findUnique({ where: { userId: req.user!.userId } });
+      const profile = await tx.customerProfile.findUnique({
+        where:   { userId: req.user!.userId },
+        include: { wallet: true },
+      });
       if (profile?.wallet) {
         const wallet    = await tx.customerWallet.findUnique({ where: { customerId: profile.id } });
         if (wallet) {
