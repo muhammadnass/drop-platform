@@ -10,8 +10,29 @@ async function request<T>(path: string, opts: RequestInit = {}, token?: string |
 
   const res  = await fetch(`${BASE}${path}`, { ...opts, headers });
   const json = await res.json();
-  if (!res.ok || !json.success) throw new Error(json.error ?? `Request failed (${res.status})`);
+  if (!res.ok || !json.success) throw new Error(formatApiError(json.error) ?? `Request failed (${res.status})`);
   return json as T;
+}
+
+// Backend validation errors arrive as zod's `flatten()` shape — an object
+// like { formErrors: string[], fieldErrors: { field: string[] } } — not a
+// plain string. Turn that into a readable message instead of letting it
+// stringify to "[object Object]" when it hits `new Error(...)`.
+function formatApiError(error: unknown): string | undefined {
+  if (error == null) return undefined;
+  if (typeof error === 'string') return error;
+  if (typeof error === 'object') {
+    const e = error as { formErrors?: string[]; fieldErrors?: Record<string, string[]> };
+    const parts: string[] = [];
+    if (e.formErrors?.length) parts.push(...e.formErrors);
+    if (e.fieldErrors) {
+      for (const [field, msgs] of Object.entries(e.fieldErrors)) {
+        if (msgs?.length) parts.push(`${field}: ${msgs.join(', ')}`);
+      }
+    }
+    if (parts.length) return parts.join('; ');
+  }
+  return 'Invalid request';
 }
 
 function withData<T>(path: string, opts?: RequestInit, token?: string | null) {

@@ -107,6 +107,15 @@ router.post('/riders/register', guard, async (req: AuthRequest, res: Response) =
   const existing = await prisma.user.findUnique({ where: { email: parsed.data.email } });
   if (existing) return res.status(409).json({ success: false, error: 'An account with that email already exists' });
 
+  if (parsed.data.vehiclePlate) {
+    const plateInFleet = await prisma.riderProfile.findFirst({
+      where: { businessId: biz.id, vehiclePlate: parsed.data.vehiclePlate },
+    });
+    if (plateInFleet) {
+      return res.status(409).json({ success: false, error: `Plate ${parsed.data.vehiclePlate} is already registered to a rider in your fleet` });
+    }
+  }
+
   const tierMap: Record<string, any> = {
     MOTORBIKE: 'DROP_MINI', TRICYCLE: 'DROP_TRI', CAR: 'DROP_FLEX', MINIVAN: 'DROP_MAX',
   };
