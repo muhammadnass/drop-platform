@@ -17,6 +17,16 @@ const DARK_MAP_STYLE: google.maps.MapTypeStyle[] = [
   { featureType: 'road',         elementType: 'geometry', stylers: [{ color: '#38414e' }] },
   { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#746855' }] },
   { featureType: 'water',        elementType: 'geometry', stylers: [{ color: '#17263c' }] },
+  // Hide Google's default business/landmark pins (shops, restaurants, hospitals,
+  // schools, etc.) — without this the map is covered in unrelated icons that have
+  // nothing to do with delivery booking and make the screen look cluttered/unfinished.
+  { featureType: 'poi',          elementType: 'labels', stylers: [{ visibility: 'off' }] },
+  { featureType: 'poi',          elementType: 'geometry', stylers: [{ visibility: 'off' }] },
+  { featureType: 'poi.business', stylers: [{ visibility: 'off' }] },
+  { featureType: 'transit',      elementType: 'labels', stylers: [{ visibility: 'off' }] },
+  { featureType: 'transit',      elementType: 'geometry', stylers: [{ visibility: 'off' }] },
+  { featureType: 'road',         elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+  { featureType: 'administrative.land_parcel', stylers: [{ visibility: 'off' }] },
 ];
 
 // Same orange teardrop marker shape the Mapbox version used, as an SVG data URL.
