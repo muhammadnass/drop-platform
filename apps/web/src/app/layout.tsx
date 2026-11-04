@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import { Syne } from 'next/font/google';
 import './globals.css';
@@ -19,7 +19,25 @@ const syne = Syne({
 export const metadata: Metadata = {
   title: 'Drop — Whatever you need, dropped in minutes',
   description: 'Fast, reliable delivery across Nigeria. Drop Mini, Flex, and Max for every shipment size.',
-  icons: { icon: '/favicon.ico' },
+  icons: { icon: '/favicon.ico', apple: '/favicon.ico' },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Drop',
+  },
+  formatDetection: { telephone: false },
+};
+
+// Separate `viewport` export (required by Next.js 14 App Router) — without this,
+// iOS Safari/home-screen apps don't get device-width scaling or safe-area insets,
+// which is why the layout required pinch-zooming to see the full screen.
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
+  themeColor: '#0f0f0f',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -8,6 +8,11 @@
     --safe-area-bottom: env(safe-area-inset-bottom, 0px);
   }
   * { box-sizing: border-box; }
+  html, body {
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
   body { @apply bg-drop-cream text-drop-ink; }
 }
 
