@@ -775,7 +775,8 @@ export default function CustomerDashboard() {
                 <div className="bg-[#2a2a2a] rounded-2xl p-4">
                   <div className="flex items-center gap-3 mb-3">
                     <span className="text-2xl">{selectedTier.icon}</span>
-                    <div><p className="text-white font-medium text-sm">{selectedTier.label}</p><p className="text-white/40 text-xs">{totalKm.toFixed(1)} km total</p></div>
+                    <div className="flex-1"><p className="text-white font-medium text-sm">{selectedTier.label}</p><p className="text-white/40 text-xs">{totalKm.toFixed(1)} km total</p></div>
+                    <button onClick={() => setStep('tier')} className="text-orange-400 text-xs font-medium hover:text-orange-300 whitespace-nowrap">Change →</button>
                   </div>
                   <div className="space-y-1.5 border-t border-white/10 pt-3">
                     {stops.map((s, i) => (
