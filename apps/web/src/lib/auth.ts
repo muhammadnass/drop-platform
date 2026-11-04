@@ -14,12 +14,24 @@ export function getToken(): string | null {
   try { return localStorage.getItem(TOKEN_KEY); } catch { return null; }
 }
 
+// middleware.ts runs on the server and can only see cookies, not
+// localStorage — so the token must be mirrored into a cookie of the same
+// name, or every navigation gets bounced back to /auth/login even after a
+// successful API login. 7 days matches the server's JWT_EXPIRES_IN default.
+const TOKEN_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
+
 export function setToken(token: string): void {
   try { localStorage.setItem(TOKEN_KEY, token); } catch {}
+  try {
+    document.cookie = `${TOKEN_KEY}=${token}; path=/; max-age=${TOKEN_MAX_AGE_SECONDS}; SameSite=Lax`;
+  } catch {}
 }
 
 export function removeToken(): void {
   try { localStorage.removeItem(TOKEN_KEY); } catch {}
+  try {
+    document.cookie = `${TOKEN_KEY}=; path=/; max-age=0; SameSite=Lax`;
+  } catch {}
 }
 
 // ── API Calls ─────────────────────────────────────────────────

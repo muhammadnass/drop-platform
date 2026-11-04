@@ -6,7 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
-const PUBLIC_PATHS  = ['/auth/login', '/auth/register', '/', '/dashboard/customer'];
+const PUBLIC_PATHS  = ['/auth/login', '/auth/register'];
 const ROLE_PATHS: Record<string, string[]> = {
   SUPER_ADMIN:    ['/dashboard/admin'],
   MANAGER:        ['/dashboard/manager'],
@@ -51,7 +51,9 @@ export function middleware(req: NextRequest) {
   const token = req.cookies.get('drop_token')?.value
     ?? req.headers.get('authorization')?.replace('Bearer ', '');
 
-  const isPublic = PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p));
+  // '/' is public only as an exact match — it must NOT use startsWith(),
+  // since every path starts with '/' and that would make all routes public.
+  const isPublic = pathname === '/' || PUBLIC_PATHS.some((p) => pathname.startsWith(p));
 
   // No token → send to login (unless already on public path)
   if (!token) {

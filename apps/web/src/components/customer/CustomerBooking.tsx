@@ -58,10 +58,10 @@ export default function CustomerBooking({ customerId, authToken }: CustomerBooki
   // Refs
   const mapDivRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
-  const pickupInputRef = useRef<HTMLInputElement>(null);
-  const dropoffInputRef = useRef<HTMLInputElement>(null);
-  const pickupAutocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
-  const dropoffAutocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  const pickupContainerRef = useRef<HTMLDivElement>(null);
+  const dropoffContainerRef = useRef<HTMLDivElement>(null);
+  const pickupAutocompleteRef = useRef<google.maps.places.PlaceAutocompleteElement | null>(null);
+  const dropoffAutocompleteRef = useRef<google.maps.places.PlaceAutocompleteElement | null>(null);
   const riderMarkerRef = useRef<google.maps.Marker | null>(null);
   const routeRendererRef = useRef<google.maps.DirectionsRenderer | null>(null);
   const socketRef = useRef<Socket | null>(null);
@@ -74,11 +74,13 @@ export default function CustomerBooking({ customerId, authToken }: CustomerBooki
       libraries: ['places', 'geometry'],
     });
 
-    loader.load().then(() => {
+    loader.load().then(async () => {
       if (!mapDivRef.current) return;
 
+      const DEFAULT_CENTER = { lat: 9.0579, lng: 7.4951 }; // Abuja, Nigeria fallback
+
       const map = new google.maps.Map(mapDivRef.current, {
-        center: { lat: 9.0579, lng: 7.4951 }, // Abuja, Nigeria
+        center: DEFAULT_CENTER,
         zoom: 13,
         disableDefaultUI: true,
         zoomControl: true,
@@ -96,42 +98,90 @@ export default function CustomerBooking({ customerId, authToken }: CustomerBooki
         },
       });
 
-      // Pickup autocomplete
-      if (pickupInputRef.current) {
-        pickupAutocompleteRef.current = new google.maps.places.Autocomplete(
-          pickupInputRef.current,
-          { componentRestrictions: { country: 'ng' } }
-        );
-        pickupAutocompleteRef.current.addListener('place_changed', () => {
-          const place = pickupAutocompleteRef.current!.getPlace();
-          if (place.geometry?.location) {
-            setPickup({
-              address: place.formatted_address ?? '',
-              lat: place.geometry.location.lat(),
-              lng: place.geometry.location.lng(),
-              placeId: place.place_id ?? '',
-            });
-          }
+      // Places API (New) — PlaceAutocompleteElement.
+      // Loaded via importLibrary so we get the new Place classes.
+      const { PlaceAutocompleteElement } = (await google.maps.importLibrary(
+        'places'
+      )) as google.maps.PlacesLibrary;
+
+      // Build a soft bias (not a hard restriction) around a center point —
+      // autocomplete results are ranked with nearby places first, but
+      // results outside the radius can still appear if relevant.
+      const biasCircle = (center: { lat: number; lng: number }, radiusMeters: number) =>
+        ({ center, radius: radiusMeters }) as google.maps.CircleLiteral;
+
+      const mountAutocomplete = (
+        container: HTMLDivElement,
+        bias: google.maps.CircleLiteral,
+        onSelect: (loc: PlaceResult) => void
+      ) => {
+        const el = new PlaceAutocompleteElement({
+          includedRegionCodes: ['ng'],
+          locationBias: bias,
         });
+        el.className = 'drop-place-autocomplete';
+        container.innerHTML = '';
+        container.appendChild(el);
+
+        el.addEventListener('gmp-placeselect', async (event: Event) => {
+          const { place } = event as unknown as { place: google.maps.places.Place };
+          await place.fetchFields({ fields: ['formattedAddress', 'location', 'id'] });
+          if (!place.location) return;
+          onSelect({
+            address: place.formattedAddress ?? '',
+            lat: place.location.lat(),
+            lng: place.location.lng(),
+            placeId: place.id ?? '',
+          });
+        });
+
+        return el;
+      };
+
+      // Pickup autocomplete
+      if (pickupContainerRef.current) {
+        pickupAutocompleteRef.current = mountAutocomplete(
+          pickupContainerRef.current,
+          biasCircle(DEFAULT_CENTER, 15000),
+          (loc) => {
+            setPickup(loc);
+            // Re-center dropoff bias on the chosen pickup point so dropoff
+            // suggestions radiate out from wherever the trip is starting.
+            if (dropoffAutocompleteRef.current) {
+              dropoffAutocompleteRef.current.locationBias = biasCircle(
+                { lat: loc.lat, lng: loc.lng },
+                15000
+              );
+            }
+          }
+        );
       }
 
       // Dropoff autocomplete
-      if (dropoffInputRef.current) {
-        dropoffAutocompleteRef.current = new google.maps.places.Autocomplete(
-          dropoffInputRef.current,
-          { componentRestrictions: { country: 'ng' } }
+      if (dropoffContainerRef.current) {
+        dropoffAutocompleteRef.current = mountAutocomplete(
+          dropoffContainerRef.current,
+          biasCircle(DEFAULT_CENTER, 15000),
+          (loc) => setDropoff(loc)
         );
-        dropoffAutocompleteRef.current.addListener('place_changed', () => {
-          const place = dropoffAutocompleteRef.current!.getPlace();
-          if (place.geometry?.location) {
-            setDropoff({
-              address: place.formatted_address ?? '',
-              lat: place.geometry.location.lat(),
-              lng: place.geometry.location.lng(),
-              placeId: place.place_id ?? '',
-            });
-          }
-        });
+      }
+
+      // Use the customer's real GPS location (when available/granted) to
+      // recenter the map and bias the pickup field toward nearby places first.
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const here = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+            map.setCenter(here);
+            if (pickupAutocompleteRef.current) {
+              pickupAutocompleteRef.current.locationBias = biasCircle(here, 15000);
+            }
+          },
+          () => {
+            // Permission denied or unavailable — keep the Abuja-wide default bias.
+          },
+          { enableHighAccuracy: true, timeout: 8000 }
+        );
       }
     });
   }, []);
@@ -305,18 +355,16 @@ export default function CustomerBooking({ customerId, authToken }: CustomerBooki
 
               {/* Pickup Input */}
               <AddressInput
-                ref={pickupInputRef}
+                containerRef={pickupContainerRef}
                 icon={<MapPin size={18} className="text-drop-orange" />}
-                placeholder="Pickup address"
                 value={pickup?.address ?? ''}
                 onClear={() => setPickup(null)}
               />
 
               {/* Dropoff Input */}
               <AddressInput
-                ref={dropoffInputRef}
+                containerRef={dropoffContainerRef}
                 icon={<MapPin size={18} className="text-drop-success" />}
-                placeholder="Drop-off address"
                 value={dropoff?.address ?? ''}
                 onClear={() => setDropoff(null)}
               />
@@ -516,27 +564,41 @@ export default function CustomerBooking({ customerId, authToken }: CustomerBooki
 
 // ── Sub-components ────────────────────────────────────────────
 
-const AddressInput = React.forwardRef<
-  HTMLInputElement,
-  { icon: React.ReactNode; placeholder: string; value: string; onClear: () => void }
->(({ icon, placeholder, value, onClear }, ref) => (
-  <div className="flex items-center gap-3 bg-drop-sand rounded-2xl px-4 py-3 border border-drop-cream focus-within:border-drop-orange transition-colors">
-    {icon}
-    <input
-      ref={ref}
-      type="text"
-      placeholder={placeholder}
-      defaultValue={value}
-      className="flex-1 bg-transparent text-drop-ink placeholder-drop-ink-muted text-sm outline-none"
-    />
-    {value && (
-      <button onClick={onClear} className="text-drop-ink-muted">
-        <X size={16} />
-      </button>
-    )}
-  </div>
-));
-AddressInput.displayName = 'AddressInput';
+function AddressInput({
+  containerRef, icon, value, onClear,
+}: {
+  containerRef: React.RefObject<HTMLDivElement>;
+  icon: React.ReactNode;
+  value: string;
+  onClear: () => void;
+}) {
+  return (
+    <div className="flex items-center gap-3 bg-drop-sand rounded-2xl px-4 py-3 border border-drop-cream focus-within:border-drop-orange transition-colors min-h-[52px]">
+      {icon}
+      {/* Always mounted so the Places API (New) <gmp-place-autocomplete>
+          custom element injected here survives select/clear cycles —
+          only its visibility toggles, never its presence in the DOM. */}
+      <div ref={containerRef} className={`flex-1 drop-autocomplete-host ${value ? 'hidden' : ''}`} />
+      {value && (
+        <span className="flex-1 text-drop-ink text-sm truncate">{value}</span>
+      )}
+      {value && (
+        <button onClick={onClear} className="text-drop-ink-muted">
+          <X size={16} />
+        </button>
+      )}
+      <style jsx global>{`
+        .drop-autocomplete-host {
+          width: 100%;
+        }
+        .drop-place-autocomplete {
+          width: 100%;
+          display: block;
+        }
+      `}</style>
+    </div>
+  );
+}
 
 function VehicleTierCard({
   tier, label, description, icon, fare, selected, onSelect,

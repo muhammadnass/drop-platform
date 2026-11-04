@@ -3,16 +3,25 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Loader } from '@googlemaps/js-api-loader';
 import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/lib/api';
 
 const SERVER_BASE = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:4000';
-const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? '';
+// Map rendering, address search and geocoding all run on Google Maps now
+// (the Mapbox token/dependency this page used to use has been removed).
 
 type Step = 'map' | 'stops' | 'tier' | 'photos' | 'confirm' | 'active';
 
 interface AddressPoint { address: string; lat: number; lng: number }
-interface MapboxFeature { place_name: string; center: [number, number] }
+// A suggestion row in the autocomplete dropdown. `center` is unknown until
+// the prediction is resolved to a full Place (on selection), since Places
+// API (New) predictions don't carry lat/lng up front.
+interface MapboxFeature {
+  place_name: string;
+  center: [number, number] | null;
+  prediction: google.maps.places.PlacePrediction;
+}
 interface Stop extends AddressPoint {
   recipientName?: string; recipientPhone?: string; notes?: string;
   distanceKm: number; fareNgn: number;
@@ -30,44 +39,153 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
-// Mapbox forward geocode
+// ── Google Places API (New) — loader + helpers ─────────────────
+// Lazily loads the 'places' library once and caches the promise so every
+// helper below (and every AutocompleteInput instance) reuses the same
+// bootstrap instead of re-injecting the Maps script.
+let placesLibraryPromise: Promise<google.maps.PlacesLibrary> | null = null;
+let geocodingLibraryPromise: Promise<google.maps.GeocodingLibrary> | null = null;
+
+function loadPlacesLibrary(): Promise<google.maps.PlacesLibrary> {
+  if (!placesLibraryPromise) {
+    const loader = new Loader({
+      apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
+      version: 'weekly',
+    });
+    placesLibraryPromise = loader.load().then(
+      () => google.maps.importLibrary('places') as Promise<google.maps.PlacesLibrary>
+    );
+  }
+  return placesLibraryPromise;
+}
+
+// Reverse geocoding (lat/lng → address) has no Places API (New) equivalent
+// — it still lives in the core Geocoding library, so that one helper below
+// keeps using google.maps.Geocoder rather than the new Place classes.
+function loadGeocodingLibrary(): Promise<google.maps.GeocodingLibrary> {
+  if (!geocodingLibraryPromise) {
+    const loader = new Loader({
+      apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
+      version: 'weekly',
+    });
+    geocodingLibraryPromise = loader.load().then(
+      () => google.maps.importLibrary('geocoding') as Promise<google.maps.GeocodingLibrary>
+    );
+  }
+  return geocodingLibraryPromise;
+}
+
+function locationBiasFor(proximity?: [number, number]): google.maps.CircleLiteral | undefined {
+  if (!proximity) return undefined;
+  // proximity is [lng, lat] (Mapbox convention, kept for call-site compat)
+  return { center: { lat: proximity[1], lng: proximity[0] }, radius: 15000 };
+}
+
+// Forward geocode: free-typed text → best-match address + coordinates.
+// Used when the customer types an address and hits "Next" without picking
+// a suggestion from the dropdown.
 async function geocode(query: string, proximity?: [number, number]): Promise<{ lat: number; lng: number; address: string } | null> {
   try {
-    const prox = proximity ? `&proximity=${proximity[0]},${proximity[1]}` : '';
-    const r = await fetch(
-      `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?country=ng&limit=1${prox}&access_token=${MAPBOX_TOKEN}`
-    );
-    const d = await r.json();
-    if (d.features?.length > 0) {
-      const f = d.features[0];
-      return { lat: f.center[1], lng: f.center[0], address: f.place_name };
-    }
-    return null;
+    const { AutocompleteSuggestion } = await loadPlacesLibrary();
+    const { suggestions } = await AutocompleteSuggestion.fetchAutocompleteSuggestions({
+      input: query,
+      includedRegionCodes: ['ng'],
+      locationBias: locationBiasFor(proximity),
+    });
+    const top = suggestions?.[0]?.placePrediction;
+    if (!top) return null;
+    const place = top.toPlace();
+    await place.fetchFields({ fields: ['location', 'formattedAddress'] });
+    if (!place.location) return null;
+    return { lat: place.location.lat(), lng: place.location.lng(), address: place.formattedAddress ?? query };
   } catch { return null; }
 }
 
-// Mapbox autocomplete — biased to user's current [lng, lat]
+// Autocomplete suggestions — biased to the user's current or pickup
+// location, nearest-first. Returns our own MapboxFeature-shaped rows so the
+// existing custom-styled dropdown (AutocompleteInput) doesn't need to
+// change; `center` stays null until the picked prediction is resolved.
 async function suggest(query: string, proximity?: [number, number]): Promise<MapboxFeature[]> {
   if (query.length < 3) return [];
   try {
-    const prox = proximity ? `&proximity=${proximity[0]},${proximity[1]}` : '';
-    const r = await fetch(
-      `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?country=ng&limit=5&types=address,place,poi,neighborhood,locality,district,region,postcode${prox}&access_token=${MAPBOX_TOKEN}`
-    );
-    const d = await r.json();
-    return d.features ?? [];
+    const { AutocompleteSuggestion } = await loadPlacesLibrary();
+    const { suggestions } = await AutocompleteSuggestion.fetchAutocompleteSuggestions({
+      input: query,
+      includedRegionCodes: ['ng'],
+      locationBias: locationBiasFor(proximity),
+    });
+    return (suggestions ?? [])
+      .filter((s) => s.placePrediction)
+      .slice(0, 5)
+      .map((s) => ({
+        place_name: s.placePrediction!.text.text,
+        center: null,
+        prediction: s.placePrediction!,
+      }));
   } catch { return []; }
 }
 
-// Mapbox reverse geocode
+// Resolves a picked suggestion's full address + lat/lng (Places API (New)
+// predictions don't carry coordinates until fetchFields() is called).
+async function resolveFeature(f: MapboxFeature): Promise<{ address: string; lat: number; lng: number } | null> {
+  try {
+    const place = f.prediction.toPlace();
+    await place.fetchFields({ fields: ['location', 'formattedAddress'] });
+    if (!place.location) return null;
+    return {
+      address: place.formattedAddress ?? f.place_name,
+      lat: place.location.lat(),
+      lng: place.location.lng(),
+    };
+  } catch { return null; }
+}
+
+// Reverse geocode (lat/lng → address) — still the core Geocoding library,
+// since Places API (New) has no reverse-geocoding equivalent.
 async function reverseGeocode(lat: number, lng: number): Promise<string> {
   try {
-    const r = await fetch(
-      `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?limit=1&access_token=${MAPBOX_TOKEN}`
-    );
-    const d = await r.json();
-    return d.features?.[0]?.place_name ?? `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+    const { Geocoder } = await loadGeocodingLibrary();
+    const geocoder = new Geocoder();
+    const { results } = await geocoder.geocode({ location: { lat, lng } });
+    return results?.[0]?.formatted_address ?? `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
   } catch { return `${lat.toFixed(5)}, ${lng.toFixed(5)}`; }
+}
+
+let routesLibraryPromise: Promise<google.maps.RoutesLibrary> | null = null;
+function loadRoutesLibrary(): Promise<google.maps.RoutesLibrary> {
+  if (!routesLibraryPromise) {
+    const loader = new Loader({
+      apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
+      version: 'weekly',
+    });
+    routesLibraryPromise = loader.load().then(
+      () => google.maps.importLibrary('routes') as Promise<google.maps.RoutesLibrary>
+    );
+  }
+  return routesLibraryPromise;
+}
+
+// Real road (driving) distance between two points, via Google's Distance
+// Matrix API — replaces the old straight-line Haversine estimate, which
+// under/over-charges whenever the actual route isn't a straight line.
+// Falls back to Haversine only if the API call fails, so a flaky request
+// never blocks the booking flow outright.
+async function drivingDistanceKm(fromLat: number, fromLng: number, toLat: number, toLng: number): Promise<number> {
+  try {
+    const { DistanceMatrixService } = await loadRoutesLibrary();
+    const service = new DistanceMatrixService();
+    const result = await service.getDistanceMatrix({
+      origins: [{ lat: fromLat, lng: fromLng }],
+      destinations: [{ lat: toLat, lng: toLng }],
+      travelMode: google.maps.TravelMode.DRIVING,
+      unitSystem: google.maps.UnitSystem.METRIC,
+    });
+    const el = result.rows?.[0]?.elements?.[0];
+    if (el?.status === 'OK' && el.distance) return el.distance.value / 1000;
+    return haversineKm(fromLat, fromLng, toLat, toLng);
+  } catch {
+    return haversineKm(fromLat, fromLng, toLat, toLng);
+  }
 }
 
 function Spinner() { return <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto" />; }
@@ -86,6 +204,7 @@ interface AutocompleteInputProps {
 function AutocompleteInput({ value, onChange, onSelect, placeholder, dotColor = 'text-orange-400', autoFocus, proximity }: AutocompleteInputProps) {
   const [suggestions, setSuggestions] = useState<MapboxFeature[]>([]);
   const [open, setOpen] = useState(false);
+  const [resolving, setResolving] = useState(false);
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleChange = (v: string) => {
@@ -98,11 +217,18 @@ function AutocompleteInput({ value, onChange, onSelect, placeholder, dotColor = 
     }, 350);
   };
 
-  const pick = (f: MapboxFeature) => {
+  const pick = async (f: MapboxFeature) => {
     onChange(f.place_name);
-    onSelect(f);
     setSuggestions([]);
     setOpen(false);
+    // Places API (New) predictions don't carry coordinates — resolve the
+    // full place (address + lat/lng) before handing it to the parent.
+    setResolving(true);
+    const resolved = await resolveFeature(f);
+    setResolving(false);
+    if (!resolved) return;
+    onChange(resolved.address);
+    onSelect({ place_name: resolved.address, center: [resolved.lng, resolved.lat], prediction: f.prediction });
   };
 
   return (
@@ -113,9 +239,10 @@ function AutocompleteInput({ value, onChange, onSelect, placeholder, dotColor = 
         onChange={e => handleChange(e.target.value)}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
         onFocus={() => suggestions.length > 0 && setOpen(true)}
-        placeholder={placeholder}
+        placeholder={resolving ? 'Resolving address…' : placeholder}
+        disabled={resolving}
         autoFocus={autoFocus}
-        className="w-full bg-[#2a2a2a] text-white pl-8 pr-3 py-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-orange-500/50 placeholder-white/30"
+        className="w-full bg-[#2a2a2a] text-white pl-8 pr-3 py-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-orange-500/50 placeholder-white/30 disabled:opacity-60"
       />
       {open && (
         <ul className="absolute z-50 top-full left-0 right-0 mt-1 bg-[#1e1e1e] border border-white/10 rounded-xl overflow-hidden shadow-xl">
@@ -132,7 +259,7 @@ function AutocompleteInput({ value, onChange, onSelect, placeholder, dotColor = 
 }
 
 // ── Mapbox Map (dynamically imported — SSR disabled) ─────────
-const MapboxMap = dynamic(() => import('@/components/MapboxMap'), {
+const GoogleMapView = dynamic(() => import('@/components/GoogleMapView'), {
   ssr: false,
   loading: () => (
     <div className="w-full h-full bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] flex items-center justify-center">
@@ -204,7 +331,7 @@ function ActivePanel({ delivery, token, onBack }: { delivery: any; token: string
 
   return (
     <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 24, stiffness: 260 }}
-      className="fixed inset-0 z-50 bg-[#0f0f0f] flex flex-col">
+      className="fixed inset-0 z-[1100] bg-[#0f0f0f] flex flex-col">
       <div className="bg-[#1a1a1a] px-4 py-3 flex items-center gap-3">
         <button onClick={onBack} className="text-white/60 hover:text-white text-xl">←</button>
         <div className="flex-1">
@@ -393,14 +520,14 @@ export default function CustomerDashboard() {
         if (!s.address.trim()) return null;
         // If lat/lng already set from autocomplete selection, skip geocoding
         if (s.lat !== 0 && s.lng !== 0) {
-          const km = Math.max(haversineKm(prev.lat, prev.lng, s.lat, s.lng), 0.5);
+          const km = Math.max(await drivingDistanceKm(prev.lat, prev.lng, s.lat, s.lng), 0.5);
           prev = { address: s.address, lat: s.lat, lng: s.lng };
           return { ...s, distanceKm: km };
         }
         const c = await geocode(s.address, userLocation);
         const lat = c?.lat ?? prev.lat + 0.01;
         const lng = c?.lng ?? prev.lng + 0.01;
-        const km = Math.max(haversineKm(prev.lat, prev.lng, lat, lng), 0.5);
+        const km = Math.max(await drivingDistanceKm(prev.lat, prev.lng, lat, lng), 0.5);
         prev = { address: s.address, lat, lng };
         return { ...s, lat, lng, distanceKm: km, address: c?.address ?? s.address };
       }));
@@ -457,7 +584,7 @@ export default function CustomerDashboard() {
 
       <div className="relative h-screen flex flex-col">
         <div className="flex-1 relative">
-          <MapboxMap center={mapCenter} markerPosition={markerPos} token={MAPBOX_TOKEN} />
+          <GoogleMapView center={mapCenter} markerPosition={markerPos} />
           <div className="absolute inset-x-0 bottom-0 h-52 bg-gradient-to-t from-[#0f0f0f] to-transparent pointer-events-none z-10" />
           <div className="absolute top-4 inset-x-4 flex items-center justify-between z-[1000]">
             <div className="bg-orange-500 rounded-2xl px-4 py-2 shadow-lg"><span className="font-bold text-white tracking-widest text-lg">DROP</span></div>
@@ -478,10 +605,14 @@ export default function CustomerDashboard() {
                 value={pickupInput}
                 onChange={setPickupInput}
                 onSelect={f => {
+                  // center is always set by AutocompleteInput.pick() before
+                  // onSelect fires (it resolves the Places API (New)
+                  // prediction to real coordinates first).
+                  const center = f.center!;
                   setPickupInput(f.place_name);
-                  setPickup({ address: f.place_name, lat: f.center[1], lng: f.center[0] });
-                  setMapCenter(f.center);
-                  setMarkerPos(f.center);
+                  setPickup({ address: f.place_name, lat: center[1], lng: center[0] });
+                  setMapCenter(center);
+                  setMarkerPos(center);
                 }}
                 placeholder={locLoading ? 'Detecting your location…' : 'Enter pickup address'}
                 dotColor="text-green-400"
@@ -524,7 +655,7 @@ export default function CustomerDashboard() {
                   <AutocompleteInput
                     value={s.address}
                     onChange={v => setStops(p => p.map((x, j) => j === i ? { ...x, address: v, lat: 0, lng: 0 } : x))}
-                    onSelect={f => setStops(p => p.map((x, j) => j === i ? { ...x, address: f.place_name, lat: f.center[1], lng: f.center[0] } : x))}
+                    onSelect={f => setStops(p => p.map((x, j) => j === i ? { ...x, address: f.place_name, lat: f.center![1], lng: f.center![0] } : x))}
                     placeholder={`Delivery address${stops.length > 1 ? ` #${i + 1}` : ''}`}
                     proximity={userLocation}
                   />
