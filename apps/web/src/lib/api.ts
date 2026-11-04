@@ -206,6 +206,11 @@ export const api = {
   inviteRider: (email: string, token: string) =>
     withData<any>('/api/businesses/riders/invite', { method: 'POST', body: JSON.stringify({ email }) }, token),
 
+  registerRider: (data: { name: string; email: string; phone?: string; vehicleType: string; vehiclePlate?: string }, token: string) =>
+    withData<{ rider: { id: string; name: string; email: string }; tempPassword: string }>('/api/businesses/riders/register', {
+      method: 'POST', body: JSON.stringify(data),
+    }, token),
+
   removeRider: (riderId: string, token: string) =>
     withData<any>(`/api/businesses/riders/${riderId}`, { method: 'DELETE' }, token),
 

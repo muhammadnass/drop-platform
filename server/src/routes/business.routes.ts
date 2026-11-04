@@ -4,11 +4,14 @@
 
 import { Router, Response } from 'express';
 import { z } from 'zod';
+import bcrypt from 'bcrypt';
+import { randomBytes } from 'crypto';
 import { AuthRequest, requireRole } from '../middleware/auth.middleware';
 import { prisma } from '../services/prisma';
 
 const router = Router();
 const guard = requireRole('BUSINESS_OWNER');
+const BCRYPT_ROUNDS = parseInt(process.env.BCRYPT_ROUNDS ?? '12');
 
 // ── GET /api/businesses/profile ───────────────────────────────
 router.get('/profile', guard, async (req: AuthRequest, res: Response) => {
@@ -78,6 +81,68 @@ router.post('/riders/invite', guard, async (req: AuthRequest, res: Response) => 
   });
 
   return res.json({ success: true, message: `${rider.name} added to your fleet` });
+});
+
+// ── POST /api/businesses/riders/register ─────────────────
+// Onboards a brand-new rider directly into this business's in-house fleet —
+// unlike /riders/invite (which only links an EXISTING Drop rider account by
+// email), this creates the User + RiderProfile from scratch, since most
+// in-house riders a business owner onboards have never signed up before.
+// A temp password is generated and returned once so the owner can hand it
+// to the rider (who should change it on first login).
+router.post('/riders/register', guard, async (req: AuthRequest, res: Response) => {
+  const Schema = z.object({
+    name:         z.string().min(2).max(80),
+    email:        z.string().email(),
+    phone:        z.string().min(10).max(15).optional(),
+    vehicleType:  z.enum(['MOTORBIKE', 'CAR', 'TRICYCLE', 'MINIVAN']).default('MOTORBIKE'),
+    vehiclePlate: z.string().max(20).optional(),
+  });
+  const parsed = Schema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ success: false, error: parsed.error.flatten() });
+
+  const biz = await prisma.business.findUnique({ where: { ownerId: req.user!.userId } });
+  if (!biz) return res.status(404).json({ success: false, error: 'Business not found' });
+
+  const existing = await prisma.user.findUnique({ where: { email: parsed.data.email } });
+  if (existing) return res.status(409).json({ success: false, error: 'An account with that email already exists' });
+
+  const tierMap: Record<string, any> = {
+    MOTORBIKE: 'DROP_MINI', TRICYCLE: 'DROP_TRI', CAR: 'DROP_FLEX', MINIVAN: 'DROP_MAX',
+  };
+  const tempPassword = randomBytes(6).toString('base64url'); // e.g. "k3F9xQ2a"
+  const passwordHash = await bcrypt.hash(tempPassword, BCRYPT_ROUNDS);
+
+  const result = await prisma.$transaction(async (tx) => {
+    const user = await tx.user.create({
+      data: {
+        name:         parsed.data.name,
+        email:        parsed.data.email,
+        phone:        parsed.data.phone,
+        passwordHash,
+        role:         'RIDER',
+      },
+    });
+    const profile = await tx.riderProfile.create({
+      data: {
+        userId:       user.id,
+        businessId:   biz.id,
+        vehicleType:  parsed.data.vehicleType,
+        vehicleTier:  tierMap[parsed.data.vehicleType],
+        vehiclePlate: parsed.data.vehiclePlate,
+      },
+    });
+    await tx.wallet.create({ data: { riderId: profile.id } });
+    return { user, profile };
+  });
+
+  return res.json({
+    success: true,
+    data: {
+      rider:        { id: result.user.id, name: result.user.name, email: result.user.email },
+      tempPassword, // shown once — share with the rider so they can log in and change it
+    },
+  });
 });
 
 // ── DELETE /api/businesses/riders/:riderId ────────────────────
