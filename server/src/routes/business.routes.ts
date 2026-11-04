@@ -80,7 +80,7 @@ router.post('/riders/invite', guard, async (req: AuthRequest, res: Response) => 
     data:  { businessId: biz.id },
   });
 
-  return res.json({ success: true, message: `${rider.name} added to your fleet` });
+  return res.json({ success: true, data: { message: `${rider.name} added to your fleet` } });
 });
 
 // ── POST /api/businesses/riders/register ─────────────────
