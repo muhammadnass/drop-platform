@@ -80,6 +80,117 @@ function AcceptSheet({ order, timeout, onAccept, onDecline }: {
   );
 }
 
+// ── Voice Recorder (mirrors customer side) ─────────────────────
+function VoiceRecorder({ onSend }: { onSend: (blob: Blob, dur: number) => void }) {
+  const [rec, setRec] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
+  const mr = useRef<MediaRecorder | null>(null);
+  const chunks = useRef<Blob[]>([]);
+  const t = useRef<ReturnType<typeof setInterval> | null>(null);
+  const st = useRef(0);
+
+  const start = async () => {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const mediaRec = new MediaRecorder(stream);
+    chunks.current = [];
+    mediaRec.ondataavailable = (e) => chunks.current.push(e.data);
+    mediaRec.onstop = () => {
+      onSend(new Blob(chunks.current, { type: 'audio/webm' }), Math.round((Date.now() - st.current) / 1000));
+      stream.getTracks().forEach((tr) => tr.stop());
+    };
+    mediaRec.start(); mr.current = mediaRec; st.current = Date.now();
+    setRec(true); setElapsed(0);
+    t.current = setInterval(() => setElapsed((p) => p + 1), 1000);
+  };
+  const stop = () => { mr.current?.stop(); if (t.current) clearInterval(t.current); setRec(false); };
+
+  return rec
+    ? <button onClick={stop} className="flex items-center gap-2 bg-red-500 text-white px-3 py-1.5 rounded-full text-xs animate-pulse">🔴 {elapsed}s — tap to send</button>
+    : <button onClick={start} className="p-2 text-white/50 hover:text-white text-lg" title="Voice note">🎙</button>;
+}
+
+// ── Rider Active Delivery Chat Panel ────────────────────────────
+// Mirrors the customer side's ActivePanel. Text messages and voice notes
+// are fully wired to the real backend. "Call" is NOT a real audio call —
+// there is no WebRTC/audio implementation anywhere in this codebase yet;
+// it only logs a call record via /calls so the UI has something to show.
+function RiderChatPanel({ delivery, token, onBack }: { delivery: any; token: string; onBack: () => void }) {
+  const [messages, setMessages] = useState<any[]>(delivery.messages ?? []);
+  const [text, setText] = useState('');
+  const [busy, setBusy] = useState(false);
+  const end = useRef<HTMLDivElement>(null);
+  const customer = delivery.customer;
+
+  useEffect(() => { end.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+
+  const send = async () => {
+    if (!text.trim()) return;
+    setBusy(true);
+    try { const m = await api.sendMessage(delivery.id, text, token); setMessages((p) => [...p, m]); setText(''); }
+    finally { setBusy(false); }
+  };
+
+  const sendVoice = async (blob: Blob, dur: number) => {
+    const b64 = await new Promise<string>((res) => { const r = new FileReader(); r.onload = () => res(r.result as string); r.readAsDataURL(blob); });
+    try {
+      const { url } = await api.uploadVoiceNote(b64, delivery.id, token);
+      await api.sendVoiceNote(delivery.id, url, dur, token);
+      setMessages((p) => [...p, { type: 'VOICE_NOTE', voiceNoteUrl: url, durationSecs: dur, _isMe: true }]);
+    } catch { }
+  };
+
+  const callCustomer = async () => {
+    try { await api.initiateCall(delivery.id, delivery.customerId, token); } catch { }
+    alert('Calling customer… (in-app voice calling isn’t built yet — this only logs the call attempt)');
+  };
+
+  return (
+    <div className="fixed inset-0 z-[1100] bg-[#1A1208] flex flex-col">
+      <div className="bg-[#221810] px-4 py-3 flex items-center gap-3 border-b border-white/10">
+        <button onClick={onBack} className="text-white/60 hover:text-white text-xl">←</button>
+        <div className="flex-1">
+          <p className="text-white font-semibold text-sm">{customer?.name ?? 'Customer'}</p>
+          <p className="text-white/40 text-xs">{customer?.phone ?? ''}</p>
+        </div>
+        <button onClick={callCustomer} className="bg-blue-500/20 text-blue-400 px-3 py-1.5 rounded-full text-xs font-medium">📞 Call</button>
+      </div>
+
+      <div className="mx-4 mt-3 bg-[#221810] border border-white/10 rounded-2xl p-4 space-y-2">
+        <div className="flex items-start gap-2"><span className="text-green-400 mt-0.5 text-xs">⬤</span><p className="text-white/80 text-sm flex-1">{delivery.pickupAddress}</p></div>
+        <div className="ml-1 border-l border-white/10 h-2" />
+        <div className="flex items-start gap-2"><span className="text-[#E8420A] mt-0.5 text-xs">⬤</span><p className="text-white/80 text-sm flex-1">{delivery.dropoffAddress}</p></div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
+        {messages.map((m: any, i: number) => {
+          const isMe = m._isMe || m.sender?.role === 'RIDER';
+          return (
+            <div key={i} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+              {m.type === 'VOICE_NOTE'
+                ? <div className={`px-3 py-2 rounded-2xl ${isMe ? 'bg-[#E8420A]' : 'bg-white/10'}`}>
+                    <audio src={m.voiceNoteUrl} controls className="h-7 w-40" />
+                    {m.durationSecs && <p className="text-white/50 text-xs mt-0.5">{m.durationSecs}s</p>}
+                  </div>
+                : <div className={`px-3 py-2 rounded-2xl max-w-[72%] text-sm ${isMe ? 'bg-[#E8420A] text-white' : 'bg-white/10 text-white/90'}`}>{m.content}</div>
+              }
+            </div>
+          );
+        })}
+        <div ref={end} />
+      </div>
+
+      <div className="p-4 bg-[#221810] flex items-center gap-2 border-t border-white/10">
+        <VoiceRecorder onSend={sendVoice} />
+        <input value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && send()}
+          placeholder="Message…" className="flex-1 bg-white/10 text-white rounded-full px-4 py-2 text-sm outline-none placeholder-white/30" />
+        <button onClick={send} disabled={busy || !text.trim()} className="bg-[#E8420A] disabled:opacity-40 text-white p-2 rounded-full w-9 h-9 flex items-center justify-center">
+          {busy ? '…' : '→'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Cancel Sheet ──────────────────────────────────────────────
 const CANCEL_REASONS = [
   { code: 'ITEM_TOO_LARGE',    label: 'Item too large for my vehicle' },
@@ -134,25 +245,33 @@ export default function RiderDashboard() {
   const [pendingOrder, setPendingOrder]     = useState<PendingOrder | null>(null);
   const [activeDelivery, setActiveDelivery] = useState<any>(null);
   const [showCancel, setShowCancel]         = useState(false);
+  const [showChat, setShowChat]             = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Orders this rider has declined or let time out — the backend's decline
+  // endpoint doesn't persist anything, so without this client-side memory the
+  // exact same PENDING order gets re-served by every poll and the sheet never
+  // stops popping back up.
+  const declinedIds = useRef<Set<string>>(new Set());
 
   useEffect(() => { if (isHydrated && !user) router.replace('/auth/login'); }, [isHydrated, user, router]);
 
-  // Load wallet + stats on mount
+  // Load wallet + stats + any already-active delivery (e.g. after a refresh) on mount
   useEffect(() => {
     if (!token) return;
     api.riderWallet(token).then(setWallet).catch(console.error);
     api.riderStats(token).then(setStats).catch(console.error);
+    api.activeOrder(token).then((d) => { if (d) setActiveDelivery(d); }).catch(console.error);
   }, [token]);
 
   // Poll for available orders when online
   useEffect(() => {
     if (!isOnline || !token) { if (pollRef.current) clearInterval(pollRef.current); return; }
     const poll = async () => {
-      if (activeDelivery) return;
+      if (activeDelivery || pendingOrder) return;
       try {
         const orders = await api.availableOrders(token);
-        if (orders?.length > 0 && !pendingOrder) setPendingOrder(orders[0]);
+        const next = orders?.find((o: PendingOrder) => !declinedIds.current.has(o.id));
+        if (next) setPendingOrder(next);
       } catch { }
     };
     poll();
@@ -175,6 +294,7 @@ export default function RiderDashboard() {
 
   const handleDecline = useCallback(async () => {
     if (!pendingOrder || !token) return;
+    declinedIds.current.add(pendingOrder.id);
     try { await api.declineOrder(pendingOrder.id, token); } catch { }
     setPendingOrder(null);
   }, [pendingOrder, token]);
@@ -247,8 +367,8 @@ export default function RiderDashboard() {
               <div className="flex gap-2 text-sm"><div className="w-2 h-2 rounded-full bg-[#E8420A] mt-1.5 shrink-0" /><span className="text-white/70">{activeDelivery.dropoffAddress}</span></div>
             </div>
             <div className="flex gap-2">
-              <button className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-blue-500/20 text-blue-400 text-sm font-semibold"><Phone size={15} /> Call</button>
-              <button className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-white/10 text-white/70 text-sm font-semibold"><MessageSquare size={15} /> Chat</button>
+              <button onClick={() => setShowChat(true)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-blue-500/20 text-blue-400 text-sm font-semibold"><Phone size={15} /> Call</button>
+              <button onClick={() => setShowChat(true)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-white/10 text-white/70 text-sm font-semibold"><MessageSquare size={15} /> Chat</button>
               <button onClick={() => setShowCancel(true)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-red-500/20 text-red-400 text-sm font-semibold"><XCircle size={15} /> Cancel</button>
             </div>
           </div>
@@ -288,6 +408,9 @@ export default function RiderDashboard() {
 
       {pendingOrder && <AcceptSheet order={pendingOrder} timeout={30} onAccept={handleAccept} onDecline={handleDecline} />}
       {showCancel && <CancelSheet onConfirm={handleCancel} onClose={() => setShowCancel(false)} />}
+      {showChat && activeDelivery && token && (
+        <RiderChatPanel delivery={activeDelivery} token={token} onBack={() => setShowChat(false)} />
+      )}
     </div>
   );
 }
