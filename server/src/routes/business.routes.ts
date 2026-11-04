@@ -154,7 +154,7 @@ router.delete('/riders/:riderId', guard, async (req: AuthRequest, res: Response)
     where: { id: req.params.riderId, businessId: biz.id },
     data:  { businessId: null },
   });
-  return res.json({ success: true, message: 'Rider removed from fleet' });
+  return res.json({ success: true, data: { message: 'Rider removed from fleet' } });
 });
 
 // ── GET /api/businesses/deliveries ───────────────────────────
