@@ -101,57 +101,76 @@ router.post('/riders/register', guard, async (req: AuthRequest, res: Response) =
   const parsed = Schema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ success: false, error: parsed.error.flatten() });
 
-  const biz = await prisma.business.findUnique({ where: { ownerId: req.user!.userId } });
-  if (!biz) return res.status(404).json({ success: false, error: 'Business not found' });
+  try {
+    const biz = await prisma.business.findUnique({ where: { ownerId: req.user!.userId } });
+    if (!biz) return res.status(404).json({ success: false, error: 'Business not found' });
 
-  const existing = await prisma.user.findUnique({ where: { email: parsed.data.email } });
-  if (existing) return res.status(409).json({ success: false, error: 'An account with that email already exists' });
+    const existing = await prisma.user.findUnique({ where: { email: parsed.data.email } });
+    if (existing) return res.status(409).json({ success: false, error: 'An account with that email already exists' });
 
-  if (parsed.data.vehiclePlate) {
-    const plateInFleet = await prisma.riderProfile.findFirst({
-      where: { businessId: biz.id, vehiclePlate: parsed.data.vehiclePlate },
-    });
-    if (plateInFleet) {
-      return res.status(409).json({ success: false, error: `Plate ${parsed.data.vehiclePlate} is already registered to a rider in your fleet` });
+    if (parsed.data.phone) {
+      const phoneInUse = await prisma.user.findUnique({ where: { phone: parsed.data.phone } });
+      if (phoneInUse) {
+        return res.status(409).json({ success: false, error: `${parsed.data.phone} is already registered to another account` });
+      }
     }
+
+    if (parsed.data.vehiclePlate) {
+      const plateInFleet = await prisma.riderProfile.findFirst({
+        where: { businessId: biz.id, vehiclePlate: parsed.data.vehiclePlate },
+      });
+      if (plateInFleet) {
+        return res.status(409).json({ success: false, error: `Plate ${parsed.data.vehiclePlate} is already registered to a rider in your fleet` });
+      }
+    }
+
+    const tierMap: Record<string, any> = {
+      MOTORBIKE: 'DROP_MINI', TRICYCLE: 'DROP_TRI', CAR: 'DROP_FLEX', MINIVAN: 'DROP_MAX',
+    };
+    const tempPassword = randomBytes(6).toString('base64url'); // e.g. "k3F9xQ2a"
+    const passwordHash = await bcrypt.hash(tempPassword, BCRYPT_ROUNDS);
+
+    const result = await prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: {
+          name:         parsed.data.name,
+          email:        parsed.data.email,
+          phone:        parsed.data.phone,
+          passwordHash,
+          role:         'RIDER',
+        },
+      });
+      const profile = await tx.riderProfile.create({
+        data: {
+          userId:       user.id,
+          businessId:   biz.id,
+          vehicleType:  parsed.data.vehicleType,
+          vehicleTier:  tierMap[parsed.data.vehicleType],
+          vehiclePlate: parsed.data.vehiclePlate,
+        },
+      });
+      await tx.wallet.create({ data: { riderId: profile.id } });
+      return { user, profile };
+    });
+
+    return res.json({
+      success: true,
+      data: {
+        rider:        { id: result.user.id, name: result.user.name, email: result.user.email },
+        tempPassword, // shown once — share with the rider so they can log in and change it
+      },
+    });
+  } catch (err: any) {
+    // Catch-all so a DB-level constraint violation (e.g. a race on the
+    // unique email/phone indexes) or any other unexpected error always
+    // sends a response, instead of leaving the client's fetch hanging
+    // forever the way Express 4's async handlers do by default.
+    if (err?.code === 'P2002') {
+      return res.status(409).json({ success: false, error: 'That email or phone number is already in use' });
+    }
+    console.error('riders/register failed:', err);
+    return res.status(500).json({ success: false, error: 'Failed to register rider. Please try again.' });
   }
-
-  const tierMap: Record<string, any> = {
-    MOTORBIKE: 'DROP_MINI', TRICYCLE: 'DROP_TRI', CAR: 'DROP_FLEX', MINIVAN: 'DROP_MAX',
-  };
-  const tempPassword = randomBytes(6).toString('base64url'); // e.g. "k3F9xQ2a"
-  const passwordHash = await bcrypt.hash(tempPassword, BCRYPT_ROUNDS);
-
-  const result = await prisma.$transaction(async (tx) => {
-    const user = await tx.user.create({
-      data: {
-        name:         parsed.data.name,
-        email:        parsed.data.email,
-        phone:        parsed.data.phone,
-        passwordHash,
-        role:         'RIDER',
-      },
-    });
-    const profile = await tx.riderProfile.create({
-      data: {
-        userId:       user.id,
-        businessId:   biz.id,
-        vehicleType:  parsed.data.vehicleType,
-        vehicleTier:  tierMap[parsed.data.vehicleType],
-        vehiclePlate: parsed.data.vehiclePlate,
-      },
-    });
-    await tx.wallet.create({ data: { riderId: profile.id } });
-    return { user, profile };
-  });
-
-  return res.json({
-    success: true,
-    data: {
-      rider:        { id: result.user.id, name: result.user.name, email: result.user.email },
-      tempPassword, // shown once — share with the rider so they can log in and change it
-    },
-  });
 });
 
 // ── DELETE /api/businesses/riders/:riderId ────────────────────
