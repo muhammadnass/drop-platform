@@ -303,8 +303,9 @@ function VoiceRecorder({ onSend }: { onSend: (blob: Blob, dur: number) => void }
 }
 
 // ── Active Delivery Panel ─────────────────────────────────────
-function ActivePanel({ delivery, token, onBack }: { delivery: any; token: string; onBack: () => void }) {
-  const [messages, setMessages] = useState<any[]>(delivery.messages ?? []);
+function ActivePanel({ delivery: initialDelivery, token, onBack, onCompleted }: { delivery: any; token: string; onBack: () => void; onCompleted: () => void }) {
+  const [delivery, setDelivery] = useState<any>(initialDelivery);
+  const [messages, setMessages] = useState<any[]>(initialDelivery.messages ?? []);
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
   const end = useRef<HTMLDivElement>(null);
@@ -321,16 +322,35 @@ function ActivePanel({ delivery, token, onBack }: { delivery: any; token: string
     rp?.lastLatitude && rp?.lastLongitude ? [rp.lastLongitude, rp.lastLatitude] : null
   );
   const socketRef = useRef<Socket | null>(null);
+  const deliveryId = initialDelivery.id;
+
+  const refreshDelivery = useCallback(async () => {
+    try {
+      const fresh = await api.activeDelivery(token);
+      if (fresh && fresh.id === deliveryId) { setDelivery(fresh); setMessages(fresh.messages ?? []); }
+      else if (!fresh) onCompleted();
+    } catch { }
+  }, [token, deliveryId, onCompleted]);
+
   useEffect(() => {
-    if (!rider) return; // no rider assigned yet (still PENDING) — nothing to track
     const socket = io(SERVER_BASE, { auth: { token } });
     socketRef.current = socket;
-    socket.on('connect', () => socket.emit('delivery:join', delivery.id));
+    socket.on('connect', () => socket.emit('delivery:join', deliveryId));
     socket.on('rider:location', (data: { lat: number; lng: number }) => {
       setRiderPos([data.lng, data.lat]);
     });
-    return () => { socket.emit('delivery:leave', delivery.id); socket.disconnect(); };
-  }, [delivery.id, rider, token]);
+    socket.on('delivery:accepted', refreshDelivery);
+    socket.on('delivery:status', (data: { status: string }) => {
+      if (data.status === 'DELIVERED' || data.status === 'CANCELLED') onCompleted();
+      else refreshDelivery();
+    });
+    return () => { socket.emit('delivery:leave', deliveryId); socket.disconnect(); };
+  }, [deliveryId, token, refreshDelivery, onCompleted]);
+
+  useEffect(() => {
+    const t = setInterval(refreshDelivery, 10000);
+    return () => clearInterval(t);
+  }, [refreshDelivery]);
 
   useEffect(() => { end.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
@@ -616,7 +636,13 @@ export default function CustomerDashboard() {
     <div className="min-h-screen bg-[#0f0f0f] text-white overflow-hidden">
       <AnimatePresence>
         {step === 'active' && activeDelivery && (
-          <ActivePanel key="active" delivery={activeDelivery} token={token!} onBack={() => { setActiveDelivery(null); setStep('map'); }} />
+          <ActivePanel
+            key="active"
+            delivery={activeDelivery}
+            token={token!}
+            onBack={() => setStep('map')}
+            onCompleted={() => { setActiveDelivery(null); setStep('map'); }}
+          />
         )}
       </AnimatePresence>
 
