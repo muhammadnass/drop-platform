@@ -363,12 +363,30 @@ model Delivery {
   calls              Call[]
   stops              DeliveryStop[]      // Multi-stop delivery stops (excluding pickup)
   photos             DeliveryPhoto[]     // Item photos
+  orderDeclines      OrderDecline[]      // Riders who declined/timed out on this order
 
   @@index([customerId])
   @@index([riderId])
   @@index([status])
   @@index([createdAt])
   @@map("deliveries")
+}
+
+// Tracks which riders have declined (or timed out on) a given PENDING order,
+// so /orders/available can stop re-serving it to them. Without this, the
+// decline endpoint was a no-op and the exact same order kept popping back up
+// on every poll for every rider, with no persistence across refreshes/devices.
+model OrderDecline {
+  id         String   @id @default(cuid())
+  deliveryId String
+  riderId    String    // User.id of the declining rider
+  createdAt  DateTime @default(now())
+
+  delivery Delivery @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+
+  @@unique([deliveryId, riderId])
+  @@index([riderId])
+  @@map("order_declines")
 }
 
 // Additional delivery stops for multi-stop deliveries

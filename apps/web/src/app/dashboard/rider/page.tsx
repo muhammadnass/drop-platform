@@ -279,6 +279,35 @@ export default function RiderDashboard() {
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, [isOnline, token, activeDelivery, pendingOrder]);
 
+  // Broadcast this rider's live GPS position while a delivery is active, so
+  // the customer's map can track them in real time. Previously nothing on
+  // the rider side ever called the location endpoint, so customer-side
+  // tracking had no data to show even though the backend already supports it.
+  const watchIdRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!activeDelivery || !token || !navigator.geolocation) {
+      if (watchIdRef.current !== null) { navigator.geolocation?.clearWatch(watchIdRef.current); watchIdRef.current = null; }
+      return;
+    }
+    watchIdRef.current = navigator.geolocation.watchPosition(
+      (pos) => {
+        api.updateLocation(pos.coords.latitude, pos.coords.longitude, activeDelivery.id, token).catch(() => {});
+      },
+      () => {},
+      { enableHighAccuracy: true, maximumAge: 4000, timeout: 10000 }
+    );
+    return () => { if (watchIdRef.current !== null) navigator.geolocation.clearWatch(watchIdRef.current); };
+  }, [activeDelivery, token]);
+
+  // Opens Google Maps turn-by-turn navigation straight to the pickup
+  // coordinates — works as a deep link into the Google Maps app on mobile,
+  // or the web app in a browser.
+  const navigateToPickup = useCallback(() => {
+    if (!activeDelivery) return;
+    const { pickupLat, pickupLng } = activeDelivery;
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${pickupLat},${pickupLng}&travelmode=driving`, '_blank');
+  }, [activeDelivery]);
+
   const handleGoOnline = async () => {
     if (!token) return;
     try { await api.riderStatus(!isOnline, undefined, undefined, token); } catch { }
@@ -366,6 +395,9 @@ export default function RiderDashboard() {
               <div className="flex gap-2 text-sm"><div className="w-2 h-2 rounded-full bg-green-400 mt-1.5 shrink-0" /><span className="text-white/70">{activeDelivery.pickupAddress}</span></div>
               <div className="flex gap-2 text-sm"><div className="w-2 h-2 rounded-full bg-[#E8420A] mt-1.5 shrink-0" /><span className="text-white/70">{activeDelivery.dropoffAddress}</span></div>
             </div>
+            <button onClick={navigateToPickup} className="w-full mb-2 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-[#E8420A]/20 text-[#E8420A] text-sm font-semibold">
+              <Navigation size={15} /> Open in Google Maps (to pickup)
+            </button>
             <div className="flex gap-2">
               <button onClick={() => setShowChat(true)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-blue-500/20 text-blue-400 text-sm font-semibold"><Phone size={15} /> Call</button>
               <button onClick={() => setShowChat(true)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-white/10 text-white/70 text-sm font-semibold"><MessageSquare size={15} /> Chat</button>

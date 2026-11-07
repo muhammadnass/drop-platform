@@ -79,7 +79,17 @@ function loadPaystack(): Promise<void> {
 // ── Main ──────────────────────────────────────────────────────
 export default function RiderProfilePage() {
   const router = useRouter();
-  const { user, token } = useAuth();
+  const { user, token, deleteAccount } = useAuth();
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const handleDeleteAccount = async () => {
+    setDeleteBusy(true);
+    const res = await deleteAccount();
+    setDeleteBusy(false);
+    if (res.ok) { router.replace('/auth/login'); return; }
+    setError(res.error ?? 'Failed to delete account');
+  };
 
   const [profile, setProfile] = useState<any>(null);
   const [stats, setStats]     = useState<any>(null);
@@ -411,6 +421,28 @@ export default function RiderProfilePage() {
             </div>
           </Card>
         )}
+
+        {/* Danger zone */}
+        <Card title="Danger Zone">
+          <p className="text-white/40 text-xs">Deleting your account removes your personal data permanently. If you have delivery history, your account will be deactivated and your email/phone freed up, but past deliveries are kept for record-keeping.</p>
+          {!confirmDelete ? (
+            <button onClick={() => setConfirmDelete(true)}
+              className="w-full border border-red-500/40 text-red-400 font-semibold py-3 rounded-xl hover:bg-red-500/10 transition-all">
+              Delete my account
+            </button>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-red-400 text-sm font-medium">Are you sure? This can&apos;t be undone.</p>
+              <div className="flex gap-2">
+                <button onClick={() => setConfirmDelete(false)} className="flex-1 py-3 rounded-xl border border-white/20 text-white/60 font-semibold">Cancel</button>
+                <button onClick={handleDeleteAccount} disabled={deleteBusy}
+                  className="flex-grow py-3 rounded-xl bg-red-500 text-white font-bold disabled:opacity-40">
+                  {deleteBusy ? <Spinner /> : 'Yes, delete my account'}
+                </button>
+              </div>
+            </div>
+          )}
+        </Card>
       </div>
     </div>
   );

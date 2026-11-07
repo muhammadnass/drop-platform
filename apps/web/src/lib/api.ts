@@ -124,6 +124,9 @@ export const api = {
   updateLocation: (lat: number, lng: number, deliveryId: string | undefined, token: string) =>
     withData<any>('/api/riders/location', { method: 'POST', body: JSON.stringify({ lat, lng, deliveryId }) }, token),
 
+  deleteAccount: (token: string) =>
+    withData<{ deleted: boolean; message: string }>('/api/auth/me', { method: 'DELETE' }, token),
+
   // ── Customer ──────────────────────────────────────────────
   customerWallet: (token: string) =>
     withData<any>('/api/customers/wallet', {}, token),

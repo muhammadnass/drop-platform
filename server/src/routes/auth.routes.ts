@@ -190,4 +190,76 @@ router.post('/logout', authMiddleware, async (req: AuthRequest, res: Response) =
   return res.json({ success: true, message: 'Logged out' });
 });
 
+// ── DELETE /api/auth/me ── Self-service account deletion ──────
+// A brand-new account with no history (no deliveries, no business) is
+// hard-deleted outright. An account with real history can't be hard-deleted
+// without breaking foreign keys on past deliveries/wallet transactions (and
+// doing so would also destroy the other party's own order history) — so
+// instead it's deactivated and its PII is scrubbed: email/phone are freed up
+// for reuse, the password is invalidated, and every session is revoked.
+// Either way the account can no longer be logged into after this call.
+router.delete('/me', authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user!.userId;
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { riderProfile: true, customerProfile: true, business: true },
+    });
+    if (!user) return res.status(404).json({ success: false, error: 'User not found' });
+
+    const [deliveriesAsCustomer, deliveriesAsRider] = await Promise.all([
+      prisma.delivery.count({ where: { customerId: userId } }),
+      prisma.delivery.count({ where: { riderId: userId } }),
+    ]);
+    const hasHistory = deliveriesAsCustomer > 0 || deliveriesAsRider > 0 || !!user.business;
+
+    if (!hasHistory) {
+      // Safe to fully remove — nothing else references this account.
+      await prisma.$transaction(async (tx) => {
+        await tx.session.deleteMany({ where: { userId } });
+        if (user.riderProfile) {
+          await tx.walletTransaction.deleteMany({ where: { wallet: { riderId: user.riderProfile.id } } });
+          await tx.wallet.deleteMany({ where: { riderId: user.riderProfile.id } });
+          await tx.riderProfile.delete({ where: { id: user.riderProfile.id } });
+        }
+        if (user.customerProfile) {
+          await tx.customerWalletTransaction.deleteMany({ where: { wallet: { customerId: user.customerProfile.id } } });
+          await tx.customerWallet.deleteMany({ where: { customerId: user.customerProfile.id } });
+          await tx.customerProfile.delete({ where: { id: user.customerProfile.id } });
+        }
+        await tx.user.delete({ where: { id: userId } });
+      });
+      return res.json({ success: true, data: { deleted: true, message: 'Account permanently deleted' } });
+    }
+
+    // Has order/business history — deactivate and scrub PII instead of a
+    // hard delete, so past deliveries/transactions stay intact for the
+    // other party (rider/customer/business) involved in them.
+    const randomPassword = await bcrypt.hash(randomUUID(), BCRYPT_ROUNDS);
+    await prisma.$transaction(async (tx) => {
+      await tx.session.deleteMany({ where: { userId } });
+      await tx.user.update({
+        where: { id: userId },
+        data: {
+          isActive:     false,
+          email:        `deleted-${userId}@drop.invalid`,
+          phone:        null,
+          name:         'Deleted User',
+          passwordHash: randomPassword,
+        },
+      });
+      if (user.riderProfile) {
+        await tx.riderProfile.update({ where: { id: user.riderProfile.id }, data: { isOnline: false } });
+      }
+    });
+    return res.json({
+      success: true,
+      data: { deleted: false, deactivated: true, message: 'Account deactivated and personal data removed. Order history is kept for record-keeping.' },
+    });
+  } catch (err) {
+    console.error('[auth/me DELETE] error:', err);
+    return res.status(500).json({ success: false, error: 'Failed to delete account. Please try again.' });
+  }
+});
+
 export { router as authRouter };

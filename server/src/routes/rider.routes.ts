@@ -8,7 +8,19 @@ import { z } from 'zod';
 import { AuthRequest, requireRole } from '../middleware/auth.middleware';
 import { prisma } from '../services/prisma';
 import { paystackInitialize, paystackVerify } from '../services/paystack.service';
+import { encryptField, decryptField, maskLast4 } from '../utils/encryption';
 import { io } from '../index';
+
+// NIN/BVN are stored encrypted (see utils/encryption.ts) and must never be
+// sent back to the client in full — this strips/masks kycValue on any
+// response shape that includes a rider profile.
+function redactKyc<T extends { kycValue?: string | null }>(profile: T): T {
+  if (profile?.kycValue) {
+    try { (profile as any).kycValue = maskLast4(decryptField(profile.kycValue)); }
+    catch { (profile as any).kycValue = null; }
+  }
+  return profile;
+}
 
 const router = Router();
 const guard  = requireRole('RIDER');
@@ -26,7 +38,7 @@ router.get('/profile', guard, async (req: AuthRequest, res: Response) => {
     },
   });
   if (!profile) return res.status(404).json({ success: false, error: 'Rider profile not found' });
-  return res.json({ success: true, data: profile });
+  return res.json({ success: true, data: redactKyc(profile) });
 });
 
 // ── PATCH /api/riders/profile ─────────────────────────────────
@@ -78,12 +90,14 @@ router.post('/kyc', guard, async (req: AuthRequest, res: Response) => {
     return res.status(400).json({ success: false, error: `${parsed.data.kycType} must be exactly 11 digits` });
   }
 
-  // In mock mode: set PENDING, then auto-verify after 3 seconds
+  // In mock mode: set PENDING, then auto-verify after 3 seconds.
+  // kycValue is NIN/BVN — a government ID number — so it's encrypted at
+  // rest (AES-256-GCM, see utils/encryption.ts) rather than stored plain.
   await prisma.riderProfile.update({
     where: { userId: req.user!.userId },
     data: {
       kycType:       parsed.data.kycType,
-      kycValue:      value, // hash in production!
+      kycValue:      encryptField(value),
       kycStatus:     'PENDING',
       kycSubmittedAt: new Date(),
     },
@@ -136,7 +150,14 @@ router.get('/orders/available', guard, async (req: AuthRequest, res: Response) =
   }
 
   const orders = await prisma.delivery.findMany({
-    where:   { status: 'PENDING', vehicleTier: profile.vehicleTier },
+    where:   {
+      status: 'PENDING',
+      vehicleTier: profile.vehicleTier,
+      // Exclude orders this rider has already declined or timed out on —
+      // without this, the same PENDING order (seeded or real) keeps being
+      // re-served on every poll forever.
+      orderDeclines: { none: { riderId: req.user!.userId } },
+    },
     include: {
       customer: { select: { name: true, phone: true } },
       stops:    true,
@@ -181,8 +202,21 @@ router.post('/orders/:id/accept', guard, async (req: AuthRequest, res: Response)
 });
 
 // ── POST /api/riders/orders/:id/decline ───────────────────────
-router.post('/orders/:id/decline', guard, async (_req: AuthRequest, res: Response) => {
-  return res.json({ success: true });
+// Persists the decline so /orders/available stops re-serving this exact
+// order to this rider. Previously a complete no-op, which was the root
+// cause of the "order keeps popping up" bug.
+router.post('/orders/:id/decline', guard, async (req: AuthRequest, res: Response) => {
+  try {
+    await prisma.orderDecline.upsert({
+      where:  { deliveryId_riderId: { deliveryId: req.params.id, riderId: req.user!.userId } },
+      create: { deliveryId: req.params.id, riderId: req.user!.userId },
+      update: {},
+    });
+    return res.json({ success: true, data: { message: 'Order declined' } });
+  } catch (err) {
+    console.error('orders/decline failed:', err);
+    return res.status(500).json({ success: false, error: 'Failed to decline order' });
+  }
 });
 
 // ── POST /api/riders/orders/:id/arrived ───────────────────────

@@ -8,6 +8,7 @@ import {
   dashboardRoute,
   getToken, setToken, removeToken,
 } from '@/lib/auth';
+import { api } from '@/lib/api';
 import type { User } from '@/types';
 
 interface AuthState {
@@ -20,6 +21,7 @@ interface AuthState {
   login(email: string, password: string): Promise<{ ok: boolean; redirectTo?: string; error?: string }>;
   register(data: { name: string; email: string; phone?: string; password: string; role?: string }): Promise<{ ok: boolean; redirectTo?: string; error?: string }>;
   logout():    Promise<void>;
+  deleteAccount(): Promise<{ ok: boolean; error?: string }>;
 }
 
 export const useAuth = create<AuthState>((set, get) => ({
@@ -99,6 +101,20 @@ export const useAuth = create<AuthState>((set, get) => ({
     } finally {
       removeToken();
       set({ user: null, token: null, isLoading: false });
+    }
+  },
+
+  // ── Delete account ───────────────────────────────────────────
+  async deleteAccount() {
+    const { token } = get();
+    if (!token) return { ok: false, error: 'Not signed in' };
+    try {
+      await api.deleteAccount(token);
+      removeToken();
+      set({ user: null, token: null });
+      return { ok: true };
+    } catch (err: unknown) {
+      return { ok: false, error: err instanceof Error ? err.message : 'Failed to delete account' };
     }
   },
 }));

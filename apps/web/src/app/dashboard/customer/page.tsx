@@ -2,8 +2,10 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import dynamic from 'next/dynamic';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader } from '@googlemaps/js-api-loader';
+import { io, Socket } from 'socket.io-client';
 import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/lib/api';
 
@@ -309,6 +311,27 @@ function ActivePanel({ delivery, token, onBack }: { delivery: any; token: string
   const rider = delivery.rider;
   const rp = rider?.riderProfile;
 
+  // ── Live rider tracking ─────────────────────────────────────
+  // Connects to the same Socket.io server the rider's location updates
+  // already broadcast to (server emits 'rider:location' to the
+  // `delivery:${id}` room on every /api/riders/location call) — previously
+  // nothing on the customer side ever joined that room or listened, so
+  // there was no live tracking at all even though the backend supported it.
+  const [riderPos, setRiderPos] = useState<[number, number] | null>(
+    rp?.lastLatitude && rp?.lastLongitude ? [rp.lastLongitude, rp.lastLatitude] : null
+  );
+  const socketRef = useRef<Socket | null>(null);
+  useEffect(() => {
+    if (!rider) return; // no rider assigned yet (still PENDING) — nothing to track
+    const socket = io(SERVER_BASE, { auth: { token } });
+    socketRef.current = socket;
+    socket.on('connect', () => socket.emit('delivery:join', delivery.id));
+    socket.on('rider:location', (data: { lat: number; lng: number }) => {
+      setRiderPos([data.lng, data.lat]);
+    });
+    return () => { socket.emit('delivery:leave', delivery.id); socket.disconnect(); };
+  }, [delivery.id, rider, token]);
+
   useEffect(() => { end.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
   const send = async () => {
@@ -351,6 +374,20 @@ function ActivePanel({ delivery, token, onBack }: { delivery: any; token: string
             <p className="text-white/50 text-sm">{rp?.vehicleTier?.replace('DROP_', '')} · {rp?.vehiclePlate ?? '—'}</p>
           </div>
           {rp?.vehiclePlatePhotoUrl && <img src={`${SERVER_BASE}${rp.vehiclePlatePhotoUrl}`} className="w-16 h-10 rounded object-cover border border-white/20" alt="Plate" />}
+        </div>
+      )}
+
+      {rider && (
+        <div className="mx-4 mt-3 rounded-2xl overflow-hidden h-40 relative">
+          <GoogleMapView
+            center={riderPos ?? [delivery.pickupLng, delivery.pickupLat]}
+            markerPosition={riderPos}
+          />
+          {!riderPos && (
+            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+              <p className="text-white/60 text-xs">Waiting for rider's live location…</p>
+            </div>
+          )}
         </div>
       )}
 
@@ -405,6 +442,7 @@ function ActivePanel({ delivery, token, onBack }: { delivery: any; token: string
 // ── Main ──────────────────────────────────────────────────────
 export default function CustomerDashboard() {
   const { token } = useAuth();
+  const router = useRouter();
   const [step, setStep] = useState<Step>('map');
 
   const [pickupInput, setPickupInput] = useState('');
@@ -588,9 +626,15 @@ export default function CustomerDashboard() {
           <div className="absolute inset-x-0 bottom-0 h-52 bg-gradient-to-t from-[#0f0f0f] to-transparent pointer-events-none z-10" />
           <div className="absolute top-4 inset-x-4 flex items-center justify-between z-[1000]">
             <div className="bg-orange-500 rounded-2xl px-4 py-2 shadow-lg"><span className="font-bold text-white tracking-widest text-lg">DROP</span></div>
-            <div className="bg-black/60 backdrop-blur rounded-full px-4 py-2 flex items-center gap-2">
-              <span className="text-white/50 text-xs">Wallet</span>
-              <span className="text-orange-400 font-bold text-sm">{fmt(walletBal)}</span>
+            <div className="flex items-center gap-2">
+              <div className="bg-black/60 backdrop-blur rounded-full px-4 py-2 flex items-center gap-2">
+                <span className="text-white/50 text-xs">Wallet</span>
+                <span className="text-orange-400 font-bold text-sm">{fmt(walletBal)}</span>
+              </div>
+              <button onClick={() => router.push('/dashboard/customer/settings')}
+                className="bg-black/60 backdrop-blur rounded-full w-9 h-9 flex items-center justify-center text-white/60 hover:text-white">
+                ⚙
+              </button>
             </div>
           </div>
         </div>
