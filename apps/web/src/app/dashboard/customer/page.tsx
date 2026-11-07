@@ -650,15 +650,23 @@ export default function CustomerDashboard() {
         <div className="flex-1 relative">
           <GoogleMapView center={mapCenter} markerPosition={markerPos} />
           <div className="absolute inset-x-0 bottom-0 h-52 bg-gradient-to-t from-[#0f0f0f] to-transparent pointer-events-none z-10" />
-          <div className="absolute top-4 inset-x-4 flex items-center justify-between z-[1000]">
-            <div className="bg-orange-500 rounded-2xl px-4 py-2 shadow-lg"><span className="font-bold text-white tracking-widest text-lg">DROP</span></div>
+          <div className="absolute inset-x-4 flex items-center justify-between z-[1000]" style={{ top: 'max(1rem, env(safe-area-inset-top))' }}>
+            <div className="bg-orange-500 rounded-2xl pl-2 pr-4 py-2 shadow-lg flex items-center gap-2">
+              <img src="/icons/logo.png" alt="" className="w-6 h-6 rounded-lg object-cover" />
+              <span className="font-bold text-white tracking-widest text-lg">DROP</span>
+            </div>
             <div className="flex items-center gap-2">
               <div className="bg-black/60 backdrop-blur rounded-full px-4 py-2 flex items-center gap-2">
                 <span className="text-white/50 text-xs">Wallet</span>
                 <span className="text-orange-400 font-bold text-sm">{fmt(walletBal)}</span>
               </div>
+              {/* Was a 36px circle — too small to reliably tap on a phone/iPad.
+                  Bumped to a 44px (Apple's minimum recommended) touch target and
+                  given a visible border + larger glyph so it reads clearly as a
+                  tappable control rather than a decorative icon. */}
               <button onClick={() => router.push('/dashboard/customer/settings')}
-                className="bg-black/60 backdrop-blur rounded-full w-9 h-9 flex items-center justify-center text-white/60 hover:text-white">
+                aria-label="Settings"
+                className="bg-black/60 backdrop-blur border border-white/10 rounded-full w-11 h-11 flex items-center justify-center text-white/70 hover:text-white hover:bg-black/80 active:scale-90 transition-all text-lg">
                 ⚙
               </button>
             </div>

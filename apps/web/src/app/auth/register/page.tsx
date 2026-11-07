@@ -106,11 +106,8 @@ export default function RegisterPage() {
 
       {/* Logo */}
       <div className="mb-8 flex flex-col items-center gap-3">
-        <div className="w-14 h-14 rounded-2xl bg-[#E8420A] flex items-center justify-center shadow-lg">
-          <svg width="32" height="32" viewBox="0 0 36 36" fill="none">
-            <path d="M18 4C18 4 8 10 8 20C8 25.5 12.5 30 18 30C23.5 30 28 25.5 28 20C28 10 18 4 18 4Z" fill="white" opacity="0.9"/>
-            <path d="M18 30L12 36H24L18 30Z" fill="white"/>
-          </svg>
+        <div className="w-14 h-14 rounded-2xl overflow-hidden shadow-lg">
+          <img src="/icons/logo.png" alt="Drop" className="w-full h-full object-cover" />
         </div>
         <h1 className="text-white text-2xl font-bold tracking-tight" style={{ fontFamily: 'var(--font-syne, sans-serif)' }}>
           Drop

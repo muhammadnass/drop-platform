@@ -19,7 +19,15 @@ const syne = Syne({
 export const metadata: Metadata = {
   title: 'Drop — Whatever you need, dropped in minutes',
   description: 'Fast, reliable delivery across Nigeria. Drop Mini, Flex, and Max for every shipment size.',
-  icons: { icon: '/favicon.ico', apple: '/favicon.ico' },
+  manifest: '/manifest.json',
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: '/apple-touch-icon.png',
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
@@ -37,7 +45,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: 'cover',
-  themeColor: '#0f0f0f',
+  themeColor: '#1A1208',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

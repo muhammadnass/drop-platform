@@ -156,11 +156,8 @@ function Loader() {
 
 function DropLogo() {
   return (
-    <div className="w-8 h-8 rounded-lg bg-[#E8420A] flex items-center justify-center">
-      <svg width="18" height="18" viewBox="0 0 36 36" fill="none">
-        <path d="M18 4C18 4 8 10 8 20C8 25.5 12.5 30 18 30C23.5 30 28 25.5 28 20C28 10 18 4 18 4Z" fill="white"/>
-        <path d="M18 30L12 36H24L18 30Z" fill="white"/>
-      </svg>
+    <div className="w-8 h-8 rounded-lg overflow-hidden">
+      <img src="/icons/logo.png" alt="Drop" className="w-full h-full object-cover" />
     </div>
   );
 }

@@ -10,20 +10,38 @@ const config: Config = {
     extend: {
       // ── DROP Brand Color System ──────────────────────────────
       colors: {
+        // Override Tailwind's default `orange` scale with the brand orange
+        // sampled from the new DROP logo (#F2650A). Most of the app uses
+        // plain `orange-400`/`orange-500`/etc. classes rather than the
+        // `drop-orange` tokens below, so overriding the scale here is what
+        // actually re-themes those existing classes app-wide.
+        orange: {
+          50:  '#FFF4ED',
+          100: '#FFE6D2',
+          200: '#FFC8A0',
+          300: '#FFA266',
+          400: '#FF7D33',
+          500: '#F2650A',
+          600: '#D34F02',
+          700: '#A93E00',
+          800: '#812F00',
+          900: '#592000',
+          950: '#3D1600',
+        },
         drop: {
           // Primary – Vibrant orange from the logo
           orange: {
-            DEFAULT: '#E8420A',
-            50:  '#FFF3EE',
-            100: '#FFE4D6',
-            200: '#FFC4A8',
-            300: '#FF9B6E',
-            400: '#FF6B33',
-            500: '#E8420A', // brand primary
-            600: '#C93600',
-            700: '#A32B00',
-            800: '#7D2200',
-            900: '#571800',
+            DEFAULT: '#F2650A',
+            50:  '#FFF4ED',
+            100: '#FFE6D2',
+            200: '#FFC8A0',
+            300: '#FFA266',
+            400: '#FF7D33',
+            500: '#F2650A', // brand primary — sampled from the DROP logo parachute
+            600: '#D34F02',
+            700: '#A93E00',
+            800: '#812F00',
+            900: '#592000',
           },
           // Neutral – warm charcoal for text & surfaces
           ink: {

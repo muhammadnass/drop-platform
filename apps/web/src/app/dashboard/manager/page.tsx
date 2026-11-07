@@ -28,11 +28,8 @@ export default function ManagerDashboard() {
     <div className="min-h-screen bg-[#1A1208] text-white pb-8">
       <header className="border-b border-white/10 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-[#E8420A] flex items-center justify-center">
-            <svg width="18" height="18" viewBox="0 0 36 36" fill="none">
-              <path d="M18 4C18 4 8 10 8 20C8 25.5 12.5 30 18 30C23.5 30 28 25.5 28 20C28 10 18 4 18 4Z" fill="white"/>
-              <path d="M18 30L12 36H24L18 30Z" fill="white"/>
-            </svg>
+          <div className="w-8 h-8 rounded-lg overflow-hidden">
+            <img src="/icons/logo.png" alt="Drop" className="w-full h-full object-cover" />
           </div>
           <span className="font-bold" style={{ fontFamily: 'var(--font-syne)' }}>Drop</span>
           <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full font-medium">Manager</span>
