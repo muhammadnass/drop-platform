@@ -196,7 +196,7 @@ export default function RiderProfilePage() {
     if (!amount || amount < 1000) return setError('Minimum top-up is ₦1,000');
     setTopupBusy(true); setError('');
     try {
-      const { authorizationUrl, reference } = await api.riderWalletTopup(amount, token!);
+      const { reference } = await api.riderWalletTopup(amount, token!);
       await loadPaystack();
       const handler = PaystackPop.setup({
         key: PK_KEY,
