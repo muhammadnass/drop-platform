@@ -21,7 +21,7 @@ function PaymentVerifyPageInner() {
     if (!token) { router.replace('/auth/login'); return; }
 
     const ref  = searchParams.get('reference') ?? searchParams.get('ref') ?? '';
-    const type = searchParams.get('type') ?? 'delivery'; // 'delivery' | 'subscription'
+    const type = searchParams.get('type') ?? 'delivery'; // 'delivery' | 'subscription' | 'customer_wallet' | 'rider_wallet'
 
     if (!ref) { setState('failed'); setMessage('No payment reference found.'); return; }
 
@@ -30,6 +30,16 @@ function PaymentVerifyPageInner() {
         if (type === 'subscription') {
           await api.verifySubscription(ref, token!);
           setMessage('Subscription activated! Your business plan is now live.');
+        } else if (type === 'customer_wallet') {
+          // Backend redirects back here with ?ref=...&type=customer_wallet
+          // after a wallet top-up — this previously fell through to
+          // verifyDeliveryPayment() (the default branch below), which hits
+          // the wrong endpoint and always fails for a wallet top-up.
+          await api.customerWalletTopupVerify(ref, token!);
+          setMessage('Wallet funded successfully!');
+        } else if (type === 'rider_wallet') {
+          await api.riderWalletTopupVerify(ref, token!);
+          setMessage('Wallet funded successfully!');
         } else {
           await api.verifyDeliveryPayment(ref, token!);
           setMessage('Payment confirmed! Your delivery is being dispatched.');

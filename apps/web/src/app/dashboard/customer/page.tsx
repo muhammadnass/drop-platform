@@ -651,10 +651,11 @@ export default function CustomerDashboard() {
           <GoogleMapView center={mapCenter} markerPosition={markerPos} />
           <div className="absolute inset-x-0 bottom-0 h-52 bg-gradient-to-t from-[#0f0f0f] to-transparent pointer-events-none z-10" />
           <div className="absolute inset-x-4 flex items-center justify-between z-[1000]" style={{ top: 'max(1rem, env(safe-area-inset-top))' }}>
-            <div className="bg-orange-500 rounded-2xl pl-2 pr-4 py-2 shadow-lg flex items-center gap-2">
+            <button onClick={() => router.push('/dashboard/customer/settings')}
+              className="bg-orange-500 rounded-2xl pl-2 pr-4 py-2 shadow-lg flex items-center gap-2 active:scale-95 transition-all">
               <img src="/icons/logo.png" alt="" className="w-6 h-6 rounded-lg object-cover" />
               <span className="font-bold text-white tracking-widest text-lg">DROP</span>
-            </div>
+            </button>
             <div className="flex items-center gap-2">
               <div className="bg-black/60 backdrop-blur rounded-full px-4 py-2 flex items-center gap-2">
                 <span className="text-white/50 text-xs">Wallet</span>
