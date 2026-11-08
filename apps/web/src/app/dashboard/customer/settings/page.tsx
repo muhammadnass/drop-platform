@@ -21,8 +21,8 @@ function FundWalletSheet({ onClose, onInitiated }: { onClose: () => void; onInit
     if (!amt || amt < 100) { setError('Enter at least ₦100'); return; }
     setBusy(true); setError('');
     try {
-      const { authorizationUrl } = await api.customerWalletTopup(amt, token!);
-      onInitiated(authorizationUrl);
+      const { authorization_url } = await api.customerWalletTopup(amt, token!);
+      onInitiated(authorization_url);
     } catch (err: any) {
       setError(err.message ?? 'Could not start payment');
       setBusy(false);

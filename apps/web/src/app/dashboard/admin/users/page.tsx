@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/lib/api';
 import {
@@ -37,14 +37,15 @@ interface EditModal {
   active: boolean;
 }
 
-export default function AdminUsersPage() {
+function AdminUsersPageInner() {
   const { user: me, token, isHydrated } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [users, setUsers]       = useState<UserRow[]>([]);
   const [loading, setLoading]   = useState(true);
   const [search, setSearch]     = useState('');
-  const [roleFilter, setRole]   = useState('');
+  const [roleFilter, setRole]   = useState(() => searchParams.get('role') ?? '');
   const [page, setPage]         = useState(1);
   const [total, setTotal]       = useState(0);
   const [perPage]               = useState(20);
@@ -242,4 +243,9 @@ export default function AdminUsersPage() {
 
 function Spin() {
   return <div className="min-h-screen bg-[#1A1208] flex items-center justify-center"><div className="w-8 h-8 border-2 border-[#E8420A] border-t-transparent rounded-full animate-spin" /></div>;
+}
+
+import { Suspense } from 'react';
+export default function AdminUsersPage() {
+  return <Suspense fallback={<Spin />}><AdminUsersPageInner /></Suspense>;
 }

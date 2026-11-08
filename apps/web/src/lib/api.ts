@@ -109,8 +109,10 @@ export const api = {
   riderWallet: (token: string) =>
     withData<any>('/api/riders/wallet', {}, token),
 
+  // Note: the backend passes through Paystack's own response shape
+  // verbatim — that's `authorization_url` (snake_case), not camelCase.
   riderWalletTopup: (amountNgn: number, token: string) =>
-    withData<{ authorizationUrl: string; reference: string }>('/api/riders/wallet/topup', {
+    withData<{ authorization_url: string; access_code: string; reference: string }>('/api/riders/wallet/topup', {
       method: 'POST',
       body: JSON.stringify({ amountNgn }),
     }, token),
@@ -132,7 +134,7 @@ export const api = {
     withData<any>('/api/customers/wallet', {}, token),
 
   customerWalletTopup: (amountNgn: number, token: string) =>
-    withData<{ authorizationUrl: string; reference: string }>('/api/customers/wallet/topup', {
+    withData<{ authorization_url: string; access_code: string; reference: string }>('/api/customers/wallet/topup', {
       method: 'POST',
       body: JSON.stringify({ amountNgn }),
     }, token),

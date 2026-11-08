@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { api } from '@/lib/api';
 import { ArrowLeft, CheckCircle2 } from 'lucide-react';
 
 const INDUSTRIES = [
@@ -18,7 +19,7 @@ const INDUSTRIES = [
 ];
 
 export default function CompanyProfilePage() {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const router   = useRouter();
 
   const [form, setForm] = useState({
@@ -30,20 +31,51 @@ export default function CompanyProfilePage() {
     primaryColor:  '#E8420A',
     welcomeMsg:    '',
   });
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved,  setSaved]  = useState(false);
+  const [error,  setError]  = useState('');
+
+  useEffect(() => {
+    if (!token) return;
+    api.businessProfile(token)
+      .then((biz: any) => setForm({
+        businessName: biz.name ?? '',
+        address:      biz.address ?? '',
+        website:      biz.website ?? '',
+        industry:     biz.industry ?? '',
+        description:  biz.description ?? '',
+        primaryColor: biz.customBranding?.primaryColor ?? '#E8420A',
+        welcomeMsg:   biz.customBranding?.welcomeMessage ?? '',
+      }))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [token]);
 
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setForm((p) => ({ ...p, [k]: e.target.value }));
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
+    if (!token) return;
     setSaving(true);
-    // TODO: POST /api/businesses/profile
-    await new Promise((r) => setTimeout(r, 800));
-    setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    setError('');
+    try {
+      await api.updateBusinessProfile({
+        name:        form.businessName || undefined,
+        address:     form.address || undefined,
+        website:     form.website || undefined,
+        industry:    form.industry || undefined,
+        description: form.description || undefined,
+        customBranding: { primaryColor: form.primaryColor, welcomeMessage: form.welcomeMsg },
+      }, token);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err: any) {
+      setError(err.message ?? 'Failed to save profile');
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -148,9 +180,11 @@ export default function CompanyProfilePage() {
             </div>
           </div>
 
+          {error && <p className="text-red-400 text-sm text-center">{error}</p>}
+
           <button
             type="submit"
-            disabled={saving}
+            disabled={saving || loading}
             className="w-full py-3.5 rounded-xl bg-[#E8420A] text-white font-bold flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95 transition-all"
             style={{ boxShadow: '0 4px 20px rgba(232,66,10,0.35)' }}
           >

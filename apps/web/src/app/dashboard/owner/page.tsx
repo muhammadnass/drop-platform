@@ -3,18 +3,31 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { api } from '@/lib/api';
 import {
   Package, Bike, BarChart2, LogOut, Settings,
   Building2, CreditCard, ChevronRight, User, Plus,
 } from 'lucide-react';
 
+function fmt(n: number) { return `₦${Math.round(n).toLocaleString()}`; }
+
 export default function OwnerDashboard() {
-  const { user, logout, isHydrated } = useAuth();
+  const { user, token, logout, isHydrated } = useAuth();
   const router = useRouter();
+  const [stats, setStats] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
 
   useEffect(() => {
     if (isHydrated && !user) router.replace('/auth/login');
   }, [isHydrated, user, router]);
+
+  useEffect(() => {
+    if (!token) return;
+    api.businessStats(token).then(setStats).catch(() => {});
+    api.businessProfile(token).then(setProfile).catch(() => {});
+  }, [token]);
+
+  const isActive = profile?.subscription?.status === 'ACTIVE';
 
   if (!isHydrated || !user) {
     return (
@@ -55,23 +68,24 @@ export default function OwnerDashboard() {
         </div>
 
         {/* Subscription status */}
-        <div className="bg-gradient-to-br from-purple-500/20 to-purple-500/5 border border-purple-500/20 rounded-2xl p-5 flex items-center justify-between">
+        <button onClick={() => router.push('/dashboard/owner/billing')}
+          className="w-full bg-gradient-to-br from-purple-500/20 to-purple-500/5 border border-purple-500/20 rounded-2xl p-5 flex items-center justify-between text-left hover:border-purple-500/40 transition-colors">
           <div>
             <div className="text-xs text-white/40 mb-1">Subscription</div>
             <div className="font-bold text-lg">$20 / month</div>
             <div className="text-xs text-white/40 mt-0.5">+ 8% commission per delivery</div>
           </div>
-          <div className="bg-yellow-500/20 text-yellow-400 text-xs px-3 py-1.5 rounded-full font-semibold">
-            Trial
+          <div className={`text-xs px-3 py-1.5 rounded-full font-semibold ${isActive ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
+            {isActive ? 'Active' : 'Inactive'}
           </div>
-        </div>
+        </button>
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label: 'Active Deliveries', value: '0', icon: Package, color: '#E8420A' },
-            { label: 'My Riders',         value: '0', icon: Bike,    color: '#A855F7' },
-            { label: 'This Month',        value: '₦0', icon: BarChart2, color: '#22C55E' },
+            { label: 'Active Deliveries', value: String(stats?.activeDeliveries ?? '—'), icon: Package, color: '#E8420A' },
+            { label: 'My Riders',         value: String(stats?.totalRiders ?? '—'),    icon: Bike,    color: '#A855F7' },
+            { label: 'This Month',        value: stats ? fmt(stats.monthSpendNgn) : '—', icon: BarChart2, color: '#22C55E' },
           ].map((s) => (
             <div key={s.label} className="bg-white/5 border border-white/10 rounded-2xl p-4 text-center">
               <div className="w-8 h-8 rounded-lg flex items-center justify-center mx-auto mb-2"

@@ -29,7 +29,16 @@ export default function AdminRevenuePage() {
   useEffect(() => {
     if (!token) return;
     api.adminRevenue(token)
-      .then((d) => setData(Array.isArray(d) ? d : []))
+      // Backend returns { month, revenue, gmv, deliveries } (snake-ish, no "Ngn" suffix,
+      // and no separate commission field — the platform fee IS the commission here).
+      // Normalize to this page's MonthData shape.
+      .then((d) => setData(Array.isArray(d) ? d.map((m: any) => ({
+        month: m.month,
+        revenueNgn: m.revenue ?? 0,
+        gmvNgn: m.gmv ?? 0,
+        deliveries: m.deliveries ?? 0,
+        commissionNgn: m.revenue ?? 0,
+      })) : []))
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [token]);
