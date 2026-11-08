@@ -81,7 +81,7 @@ export default function CustomerSettingsPage() {
 
   return (
     <div className="min-h-screen bg-[#0f0f0f] text-white pb-16">
-      <div className="bg-[#1a1a1a] px-4 py-4 flex items-center gap-3 sticky top-0 z-10">
+      <div className="bg-[#1a1a1a] px-4 pb-4 flex items-center gap-3 sticky top-0 z-10" style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
         <button onClick={() => router.back()} className="text-white/60 hover:text-white text-xl">←</button>
         <div className="flex-1">
           <p className="text-white font-bold">My Account</p>

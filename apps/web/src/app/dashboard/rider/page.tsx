@@ -146,7 +146,7 @@ function RiderChatPanel({ delivery, token, onBack }: { delivery: any; token: str
 
   return (
     <div className="fixed inset-0 z-[1100] bg-[#1A1208] flex flex-col">
-      <div className="bg-[#221810] px-4 py-3 flex items-center gap-3 border-b border-white/10">
+      <div className="bg-[#221810] px-4 pb-3 flex items-center gap-3 border-b border-white/10" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}>
         <button onClick={onBack} className="text-white/60 hover:text-white text-xl">←</button>
         <div className="flex-1">
           <p className="text-white font-semibold text-sm">{customer?.name ?? 'Customer'}</p>
@@ -339,7 +339,7 @@ export default function RiderDashboard() {
 
   return (
     <div className="min-h-screen bg-[#1A1208] text-white pb-8">
-      <header className="border-b border-white/10 px-6 py-4 flex items-center justify-between">
+      <header className="border-b border-white/10 px-6 pb-4 flex items-center justify-between" style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg overflow-hidden">
             <img src="/icons/logo.png" alt="Drop" className="w-full h-full object-cover" />

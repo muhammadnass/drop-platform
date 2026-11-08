@@ -375,7 +375,7 @@ function ActivePanel({ delivery: initialDelivery, token, onBack, onCompleted }: 
   return (
     <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 24, stiffness: 260 }}
       className="fixed inset-0 z-[1100] bg-[#0f0f0f] flex flex-col">
-      <div className="bg-[#1a1a1a] px-4 py-3 flex items-center gap-3">
+      <div className="bg-[#1a1a1a] px-4 pb-3 flex items-center gap-3" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}>
         <button onClick={onBack} className="text-white/60 hover:text-white text-xl">←</button>
         <div className="flex-1">
           <p className="text-white font-semibold text-sm">Active Delivery</p>

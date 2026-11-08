@@ -59,7 +59,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-[#1A1208] text-white pb-10">
-      <header className="border-b border-white/10 px-6 py-4 flex items-center justify-between">
+      <header className="border-b border-white/10 px-6 pb-4 flex items-center justify-between" style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
         <div className="flex items-center gap-3">
           <DropLogo />
           <span className="font-bold" style={{ fontFamily: 'var(--font-syne)' }}>Drop</span>
