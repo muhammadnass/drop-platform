@@ -144,8 +144,12 @@ export default function CustomerSettingsPage() {
               <p className="text-white text-sm">{user.phone}</p>
             </div>
           )}
+          <button onClick={() => router.push('/dashboard/customer/history')}
+            className="w-full flex items-center justify-between border border-white/10 text-white/70 font-medium py-3 px-4 rounded-xl hover:bg-white/5 transition-all mt-2">
+            Delivery History <span className="text-white/30">→</span>
+          </button>
           <button onClick={async () => { await logout(); router.replace('/auth/login'); }}
-            className="w-full border border-white/20 text-white/70 font-semibold py-3 rounded-xl hover:bg-white/5 transition-all mt-2">
+            className="w-full border border-white/20 text-white/70 font-semibold py-3 rounded-xl hover:bg-white/5 transition-all">
             Log out
           </button>
         </div>

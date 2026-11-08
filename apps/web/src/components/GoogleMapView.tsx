@@ -6,6 +6,12 @@ import { Loader } from '@googlemaps/js-api-loader';
 interface GoogleMapViewProps {
   center: [number, number]; // [lng, lat] — kept for drop-in compatibility with the old MapboxMap prop shape
   markerPosition: [number, number] | null; // [lng, lat]
+  // When set, the real marker is suppressed and the caller is expected to
+  // render its own fixed center-of-viewport pin overlay (classic Uber-style
+  // "drag the map, pin stays put" pattern) — this just reports the map's
+  // center back out every time it settles after a pan/zoom so the caller
+  // can reverse-geocode it.
+  onIdleCenterChanged?: (lat: number, lng: number) => void;
 }
 
 // Same palette as the dark Mapbox style this replaces, re-implemented as a
@@ -56,11 +62,16 @@ function loadMaps(): Promise<void> {
   return mapsLibraryPromise;
 }
 
-export default function GoogleMapView({ center, markerPosition }: GoogleMapViewProps) {
+export default function GoogleMapView({ center, markerPosition, onIdleCenterChanged }: GoogleMapViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
   const markerRef = useRef<google.maps.Marker | null>(null);
   const readyRef = useRef(false);
+  // Keep the latest callback in a ref so the 'idle' listener (attached once,
+  // on map init) always calls the current version without needing to be
+  // re-attached every render.
+  const onIdleRef = useRef(onIdleCenterChanged);
+  onIdleRef.current = onIdleCenterChanged;
 
   // Init map once, after the Maps JS API has loaded.
   useEffect(() => {
@@ -75,6 +86,10 @@ export default function GoogleMapView({ center, markerPosition }: GoogleMapViewP
         styles: DARK_MAP_STYLE,
       });
       readyRef.current = true;
+      mapRef.current.addListener('idle', () => {
+        const c = mapRef.current?.getCenter();
+        if (c) onIdleRef.current?.(c.lat(), c.lng());
+      });
       // Apply whatever marker was already set before the map finished loading.
       if (markerPosition) {
         markerRef.current = new google.maps.Marker({

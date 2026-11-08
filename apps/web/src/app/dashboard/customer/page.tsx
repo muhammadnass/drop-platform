@@ -149,7 +149,16 @@ async function reverseGeocode(lat: number, lng: number): Promise<string> {
     const { Geocoder } = await loadGeocodingLibrary();
     const geocoder = new Geocoder();
     const { results } = await geocoder.geocode({ location: { lat, lng } });
-    return results?.[0]?.formatted_address ?? `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+    if (!results?.length) return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+    // Google's first result is sometimes a bare Plus Code (e.g. "WGHX+4XP")
+    // when there's no indexed building at that exact point — prefer a result
+    // that's actually a street/premise/route, falling back through the list
+    // before giving up and using whatever the top result was.
+    const preferred =
+      results.find(r => !r.types.includes('plus_code') && (r.types.includes('street_address') || r.types.includes('route') || r.types.includes('premise') || r.types.includes('subpremise') || r.types.includes('neighborhood'))) ??
+      results.find(r => !r.types.includes('plus_code')) ??
+      results[0];
+    return preferred.formatted_address ?? `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
   } catch { return `${lat.toFixed(5)}, ${lng.toFixed(5)}`; }
 }
 
@@ -303,6 +312,41 @@ function VoiceRecorder({ onSend }: { onSend: (blob: Blob, dur: number) => void }
 }
 
 // ── Active Delivery Panel ─────────────────────────────────────
+function CustomerCancelSheet({ token, onConfirm, onClose }: { token: string; onConfirm: (code: string, note: string) => void; onClose: () => void }) {
+  const [reasons, setReasons] = useState<any[]>([]);
+  const [selected, setSelected] = useState('');
+  const [note, setNote] = useState('');
+
+  useEffect(() => { api.cancellationReasons('CUSTOMER', token).then(setReasons).catch(() => setReasons([])); }, [token]);
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[1200] flex items-end justify-center p-4">
+      <div className="w-full max-w-sm bg-[#1a1a1a] border border-white/10 rounded-3xl p-6">
+        <h3 className="font-bold text-lg mb-1">Cancel Delivery</h3>
+        <p className="text-white/40 text-sm mb-4">Select a reason for cancelling</p>
+        <div className="space-y-2 max-h-52 overflow-y-auto mb-4 pr-1">
+          {(reasons.length ? reasons : [{ code: 'CHANGED_MIND', label: 'Changed my mind' }, { code: 'WRONG_ADDRESS', label: 'Entered wrong address' }, { code: 'TOO_SLOW', label: 'Taking too long' }, { code: 'OTHER', label: 'Other' }]).map((r: any) => (
+            <button key={r.code} onClick={() => setSelected(r.code)}
+              className={`w-full text-left px-3 py-2.5 rounded-xl text-sm border transition-colors ${selected === r.code ? 'border-orange-500 bg-orange-500/10 text-white' : 'border-white/10 bg-white/5 text-white/60 hover:border-white/20'}`}>
+              {r.label}
+            </button>
+          ))}
+        </div>
+        {selected && (
+          <textarea value={note} onChange={(e) => setNote(e.target.value)}
+            placeholder="Add details (optional)" rows={2}
+            className="w-full px-3 py-2.5 rounded-xl bg-white/10 border border-white/10 text-white text-sm placeholder-white/30 outline-none focus:border-orange-500 resize-none mb-4" />
+        )}
+        <div className="flex gap-3">
+          <button onClick={onClose} className="flex-1 py-3 rounded-xl border border-white/20 text-white/60 font-semibold">Keep Delivery</button>
+          <button onClick={() => selected && onConfirm(selected, note)} disabled={!selected}
+            className="flex-grow py-3 rounded-xl bg-red-500 text-white font-bold disabled:opacity-40">Confirm Cancel</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ActivePanel({ delivery: initialDelivery, token, onBack, onCompleted }: { delivery: any; token: string; onBack: () => void; onCompleted: () => void }) {
   const [delivery, setDelivery] = useState<any>(initialDelivery);
   const [messages, setMessages] = useState<any[]>(initialDelivery.messages ?? []);
@@ -370,6 +414,24 @@ function ActivePanel({ delivery: initialDelivery, token, onBack, onCompleted }: 
     } catch { }
   };
 
+  const [showCancel, setShowCancel] = useState(false);
+  const [cancelBusy, setCancelBusy] = useState(false);
+  // Backend only allows a customer to cancel while the order hasn't been
+  // picked up yet (PENDING or ACCEPTED) — matches /api/deliveries/:id/cancel.
+  const canCancel = delivery.status === 'PENDING' || delivery.status === 'ACCEPTED';
+
+  const doCancel = async (code: string, note: string) => {
+    setCancelBusy(true);
+    try {
+      await api.cancelDelivery(delivery.id, { reason: code, note }, token);
+      setShowCancel(false);
+      onCompleted();
+    } catch (err: any) {
+      setShowCancel(false);
+      alert(err.message ?? 'Could not cancel delivery');
+    } finally { setCancelBusy(false); }
+  };
+
   const statusColors: Record<string, string> = { PENDING: 'bg-yellow-500', ACCEPTED: 'bg-blue-500', ARRIVED_PICKUP: 'bg-purple-500', IN_TRANSIT: 'bg-orange-500', DELIVERED: 'bg-green-500', CANCELLED: 'bg-red-500' };
 
   return (
@@ -381,8 +443,17 @@ function ActivePanel({ delivery: initialDelivery, token, onBack, onCompleted }: 
           <p className="text-white font-semibold text-sm">Active Delivery</p>
           <span className={`text-xs text-white px-2 py-0.5 rounded-full ${statusColors[delivery.status] ?? 'bg-gray-600'}`}>{delivery.status.replace(/_/g, ' ')}</span>
         </div>
-        {rider && <button onClick={() => alert('Calling rider… (WebRTC pending)')} className="bg-green-600 text-white px-3 py-1.5 rounded-full text-xs font-medium">📞 Call</button>}
+        <div className="flex items-center gap-2">
+          {canCancel && (
+            <button onClick={() => setShowCancel(true)} className="bg-red-500/20 text-red-400 px-3 py-1.5 rounded-full text-xs font-medium">Cancel</button>
+          )}
+          {rider && <button onClick={() => alert('Calling rider… (WebRTC pending)')} className="bg-green-600 text-white px-3 py-1.5 rounded-full text-xs font-medium">📞 Call</button>}
+        </div>
       </div>
+
+      {showCancel && (
+        <CustomerCancelSheet token={token} onConfirm={doCancel} onClose={() => setShowCancel(false)} />
+      )}
 
       {rider && (
         <div className="mx-4 mt-3 bg-[#1a1a1a] rounded-2xl p-4 flex items-center gap-4">
@@ -485,6 +556,35 @@ export default function CustomerDashboard() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const photoRef = useRef<HTMLInputElement>(null);
+
+  // ── Manual pin adjustment (Uber-style "drag the map" pin) ──
+  // GPS/autocomplete can land a few meters off — this lets the customer
+  // drag the map under a fixed center pin to nudge the pickup point exactly
+  // where they are, then confirms it with a fresh reverse-geocode.
+  const [pinMode, setPinMode] = useState(false);
+  const [pinCoords, setPinCoords] = useState<[number, number] | null>(null); // [lng, lat]
+  const [pinAddr, setPinAddr] = useState('');
+  const [pinResolving, setPinResolving] = useState(false);
+  const pinDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handlePinIdle = useCallback((lat: number, lng: number) => {
+    setPinCoords([lng, lat]);
+    setPinResolving(true);
+    if (pinDebounce.current) clearTimeout(pinDebounce.current);
+    pinDebounce.current = setTimeout(async () => {
+      const addr = await reverseGeocode(lat, lng);
+      setPinAddr(addr);
+      setPinResolving(false);
+    }, 300);
+  }, []);
+
+  const confirmPin = () => {
+    if (!pinCoords) return;
+    setPickupInput(pinAddr);
+    setPickup({ address: pinAddr, lat: pinCoords[1], lng: pinCoords[0] });
+    setMarkerPos(pinCoords);
+    setPinMode(false);
+  };
 
   // ── Auto-detect location on mount ──────────────────────────
   useEffect(() => {
@@ -648,10 +748,35 @@ export default function CustomerDashboard() {
 
       <div className="relative h-screen flex flex-col">
         <div className="flex-1 relative">
-          <GoogleMapView center={mapCenter} markerPosition={markerPos} />
+          <GoogleMapView
+            center={mapCenter}
+            markerPosition={pinMode ? null : markerPos}
+            onIdleCenterChanged={pinMode ? handlePinIdle : undefined}
+          />
+          {pinMode && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[900]" style={{ marginTop: '-18px' }}>
+              <span className="text-4xl drop-shadow-lg">📍</span>
+            </div>
+          )}
+          {pinMode && (
+            <div className="absolute inset-x-4 bottom-4 z-[950] bg-[#1a1a1a]/95 backdrop-blur border border-white/10 rounded-2xl p-4 space-y-2">
+              <p className="text-white/40 text-xs">Drag the map so the pin sits on your exact pickup spot</p>
+              <p className="text-white text-sm font-medium truncate">{pinResolving ? 'Resolving address…' : pinAddr}</p>
+              <div className="flex gap-2">
+                <button onClick={() => setPinMode(false)} className="flex-1 py-2.5 rounded-xl border border-white/20 text-white/60 font-semibold text-sm">Cancel</button>
+                <button onClick={confirmPin} disabled={pinResolving || !pinCoords}
+                  className="flex-grow py-2.5 rounded-xl bg-orange-500 disabled:opacity-40 text-white font-bold text-sm">
+                  Confirm this location
+                </button>
+              </div>
+            </div>
+          )}
           <div className="absolute inset-x-0 bottom-0 h-52 bg-gradient-to-t from-[#0f0f0f] to-transparent pointer-events-none z-10" />
           <div className="absolute inset-x-4 flex items-center justify-between z-[1000]" style={{ top: 'max(1rem, env(safe-area-inset-top))' }}>
-            <button onClick={() => router.push('/dashboard/customer/settings')}
+            {/* DROP badge → Delivery History (distinct from the ⚙ settings
+                button below, which goes to Account/Wallet — these used to
+                point at the same page, which was redundant). */}
+            <button onClick={() => router.push('/dashboard/customer/history')}
               className="bg-orange-500 rounded-2xl pl-2 pr-4 py-2 shadow-lg flex items-center gap-2 active:scale-95 transition-all">
               <img src="/icons/logo.png" alt="" className="w-6 h-6 rounded-lg object-cover" />
               <span className="font-bold text-white tracking-widest text-lg">DROP</span>
@@ -699,9 +824,16 @@ export default function CustomerDashboard() {
                 proximity={userLocation}
               />
               {/* Always visible — lets customer revert to live location */}
-              <button onClick={useCurrentLocation} disabled={loading} className="flex items-center gap-2 text-orange-400 text-sm hover:text-orange-300 transition-colors disabled:opacity-50">
-                📍 Use my current location
-              </button>
+              <div className="flex items-center justify-between">
+                <button onClick={useCurrentLocation} disabled={loading} className="flex items-center gap-2 text-orange-400 text-sm hover:text-orange-300 transition-colors disabled:opacity-50">
+                  📍 Use my current location
+                </button>
+                <button
+                  onClick={() => { setPinCoords(mapCenter); setPinAddr(pickupInput); setPinMode(true); }}
+                  className="flex items-center gap-1.5 text-white/50 text-xs hover:text-white transition-colors">
+                  🎯 Not quite right? Adjust on map
+                </button>
+              </div>
               {error && <p className="text-red-400 text-xs">{error}</p>}
               <button onClick={confirmPickup} disabled={loading || !pickupInput.trim()}
                 className="w-full bg-orange-500 hover:bg-orange-400 disabled:opacity-40 text-white font-semibold py-3.5 rounded-2xl transition-all active:scale-95">
