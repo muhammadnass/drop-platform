@@ -1,12 +1,42 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/lib/api';
+import { fileToResizedBase64 } from '@/lib/image';
+
+const SERVER_BASE = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:4000';
 
 function Spinner() { return <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto" />; }
 function fmt(n: number) { return `₦${Math.round(n).toLocaleString()}`; }
+
+// ── Avatar upload tile ──────────────────────────────────
+ function AvatarUpload({ url, name, onCapture, loading }: { url?: string | null; name?: string; onCapture: (b64: string) => void; loading?: boolean }) {
+  const ref = useRef<HTMLInputElement>(null);
+  const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const b64 = await fileToResizedBase64(file, 640, 0.85);
+    onCapture(b64);
+    e.target.value = '';
+  };
+  const resolved = url ? (url.startsWith('http') ? url : `${SERVER_BASE}${url}`) : null;
+  const initial = (name ?? '?').trim().charAt(0).toUpperCase();
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <button onClick={() => ref.current?.click()} disabled={loading}
+        className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-orange-500/60 bg-[#2a2a2a] flex items-center justify-center">
+        {resolved
+          ? <img src={resolved} className="w-full h-full object-cover" alt="Profile" />
+          : loading ? <Spinner /> : <span className="text-2xl font-bold text-white/60">{initial}</span>
+        }
+        <div className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[10px] text-center py-1">Change</div>
+      </button>
+      <input ref={ref} type="file" accept="image/*" onChange={handleChange} className="hidden" />
+    </div>
+  );
+}
 
 // ── Fund Wallet Sheet ────────────────────────────────────────
 function FundWalletSheet({ onClose, onInitiated }: { onClose: () => void; onInitiated: (url: string) => void }) {
@@ -58,13 +88,29 @@ function FundWalletSheet({ onClose, onInitiated }: { onClose: () => void; onInit
 
 export default function CustomerSettingsPage() {
   const router = useRouter();
-  const { user, token, deleteAccount, logout } = useAuth();
+  const { user, token, deleteAccount, logout, setUser } = useAuth();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [wallet, setWallet] = useState<any>(null);
   const [walletLoading, setWalletLoading] = useState(true);
   const [showFund, setShowFund] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+
+  const handleAvatar = async (b64: string) => {
+    if (!token || !user) return;
+    setAvatarUploading(true);
+    setError('');
+    try {
+      const { url } = await api.uploadImage(b64, 'profiles', token);
+      const updated = await api.updateMe({ avatarUrl: url }, token);
+      setUser(updated);
+    } catch (err: any) {
+      setError(err.message ?? 'Failed to update profile photo');
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
 
   useEffect(() => {
     if (!token) return;
@@ -130,6 +176,9 @@ export default function CustomerSettingsPage() {
         {/* ── Account details ──────────────────────────────────── */}
         <div className="bg-[#1a1a1a] rounded-2xl p-5 space-y-3">
           <p className="text-white font-semibold text-sm uppercase tracking-widest opacity-60">Account</p>
+          <div className="flex justify-center pb-1">
+            <AvatarUpload url={user?.avatarUrl} name={user?.name} onCapture={handleAvatar} loading={avatarUploading} />
+          </div>
           <div className="space-y-1">
             <p className="text-white/40 text-xs">Name</p>
             <p className="text-white text-sm">{user?.name}</p>

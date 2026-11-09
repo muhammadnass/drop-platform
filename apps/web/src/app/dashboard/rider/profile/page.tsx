@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/lib/api';
+import { fileToResizedBase64 } from '@/lib/image';
 
 const SERVER_BASE = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:4000';
 const PK_KEY = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY ?? '';
@@ -33,12 +34,14 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 // ── Photo upload tile ─────────────────────────────────────────
 function PhotoTile({ url, label, onCapture, loading }: { url?: string | null; label: string; onCapture: (b64: string) => void; loading?: boolean }) {
   const ref = useRef<HTMLInputElement>(null);
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => onCapture(reader.result as string);
-    reader.readAsDataURL(file);
+    // Resize/compress before upload — raw phone-camera photos (8-20MB) were
+    // silently failing to upload; a smaller JPEG uploads fast and reliably.
+    const b64 = await fileToResizedBase64(file, 1280, 0.82);
+    onCapture(b64);
+    e.target.value = '';
   };
   return (
     <div className="flex flex-col items-center gap-2">

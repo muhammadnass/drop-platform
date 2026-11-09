@@ -8,6 +8,7 @@ import { Loader } from '@googlemaps/js-api-loader';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/lib/api';
+import { fileToResizedBase64 } from '@/lib/image';
 
 const SERVER_BASE = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:4000';
 // Map rendering, address search and geocoding all run on Google Maps now
@@ -702,7 +703,7 @@ export default function CustomerDashboard() {
     setLoading(true);
     try {
       const urls = await Promise.all(files.map(async f => {
-        const b64 = await new Promise<string>(res => { const r = new FileReader(); r.onload = () => res(r.result as string); r.readAsDataURL(f); });
+        const b64 = await fileToResizedBase64(f, 1280, 0.82);
         const { url } = await api.uploadImage(b64, 'items', token);
         return url;
       }));

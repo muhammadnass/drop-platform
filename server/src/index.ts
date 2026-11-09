@@ -45,7 +45,9 @@ app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 // Raw body needed for Paystack webhook signature verification
 app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
 
-app.use(express.json({ limit: '10mb' }));   // 10MB for base64 image uploads
+app.use(express.json({ limit: '20mb' }));   // 20MB — base64 adds ~33% overhead, and a full-res
+                                              // phone camera photo (esp. iPhone HEIC/JPEG) can be
+                                              // 8–15MB raw; 10MB silently rejected those uploads.
 app.use(express.urlencoded({ extended: true }));
 
 app.use('/api/', rateLimit({

@@ -66,6 +66,10 @@ export const api = {
       body: JSON.stringify({ base64, deliveryId }),
     }, token),
 
+  // ── Auth / own account ────────────────────────────
+  updateMe: (data: { name?: string; avatarUrl?: string }, token: string) =>
+    withData<any>('/api/auth/me', { method: 'PATCH', body: JSON.stringify(data) }, token),
+
   // ── Rider ─────────────────────────────────────────────────
   riderProfile: (token: string) =>
     withData<any>('/api/riders/profile', {}, token),

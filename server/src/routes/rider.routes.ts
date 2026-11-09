@@ -49,8 +49,10 @@ router.patch('/profile', guard, async (req: AuthRequest, res: Response) => {
     vehicleModel:         z.string().max(60).optional(),
     vehicleColor:         z.string().max(40).optional(),
     licenseNumber:        z.string().max(30).optional(),
-    profilePhotoUrl:      z.string().url().optional(),
-    vehiclePlatePhotoUrl: z.string().url().optional(),
+    // Our own /uploads/... path, not a public internet URL — z.string().url()
+    // rejected it outright, which silently broke every rider photo save.
+    profilePhotoUrl:      z.string().min(1).max(500).optional(),
+    vehiclePlatePhotoUrl: z.string().min(1).max(500).optional(),
   });
   const tierMap: Record<string, any> = {
     MOTORBIKE: 'DROP_MINI', TRICYCLE: 'DROP_TRI', CAR: 'DROP_FLEX', MINIVAN: 'DROP_MAX',

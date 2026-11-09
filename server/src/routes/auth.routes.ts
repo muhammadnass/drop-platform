@@ -181,6 +181,23 @@ router.get('/me', authMiddleware, async (req: AuthRequest, res: Response) => {
   return res.json({ success: true, data: userPublic(user) });
 });
 
+// ── PATCH /api/auth/me ── update own name / avatar ─────────────
+router.patch('/me', authMiddleware, async (req: AuthRequest, res: Response) => {
+  const Schema = z.object({
+    name:      z.string().min(2).max(100).optional(),
+    avatarUrl: z.string().min(1).max(500).optional(), // our own /uploads/... path, not a strict URL
+  });
+  const parsed = Schema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ success: false, error: parsed.error.flatten() });
+
+  const user = await prisma.user.update({
+    where: { id: req.user!.userId },
+    data:  parsed.data,
+    include: { riderProfile: true, customerProfile: true, business: true },
+  });
+  return res.json({ success: true, data: userPublic(user) });
+});
+
 // ── POST /api/auth/logout ──────────────────────────────────────
 router.post('/logout', authMiddleware, async (req: AuthRequest, res: Response) => {
   const token = req.headers.authorization?.slice(7);

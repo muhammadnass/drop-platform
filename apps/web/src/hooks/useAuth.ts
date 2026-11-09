@@ -22,6 +22,7 @@ interface AuthState {
   register(data: { name: string; email: string; phone?: string; password: string; role?: string }): Promise<{ ok: boolean; redirectTo?: string; error?: string }>;
   logout():    Promise<void>;
   deleteAccount(): Promise<{ ok: boolean; error?: string }>;
+  setUser(user: User): void;
 }
 
 export const useAuth = create<AuthState>((set, get) => ({
@@ -103,6 +104,9 @@ export const useAuth = create<AuthState>((set, get) => ({
       set({ user: null, token: null, isLoading: false });
     }
   },
+
+  // ── Update cached user (e.g. after an avatar/name change) ─────
+  setUser(user) { set({ user }); },
 
   // ── Delete account ───────────────────────────────────────────
   async deleteAccount() {

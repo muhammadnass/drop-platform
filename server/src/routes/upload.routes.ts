@@ -38,8 +38,8 @@ router.post('/image', authMiddleware, async (req: AuthRequest, res: Response) =>
     const rawExt = match[1].toLowerCase();
     const ext    = rawExt === 'jpeg' ? 'jpg' : rawExt.replace(/[^a-z0-9]/g, '') || 'jpg';
     const data    = Buffer.from(match[2], 'base64');
-    const maxSize = 5 * 1024 * 1024; // 5MB
-    if (data.length > maxSize) return res.status(400).json({ success: false, error: 'Image too large (max 5MB)' });
+    const maxSize = 15 * 1024 * 1024; // 15MB — raised from 5MB, which rejected real phone-camera photos
+    if (data.length > maxSize) return res.status(400).json({ success: false, error: 'Image too large (max 15MB)' });
 
     const filename = `${req.user!.userId}-${Date.now()}.${ext}`;
     const filepath = path.join(UPLOAD_DIR, folder, filename);
