@@ -31,7 +31,7 @@ export default function RiderHistoryPage() {
   }, [token, page]);
 
   return (
-    <div className="min-h-screen bg-[#1A1208] text-white pb-16">
+    <div className="min-h-screen text-white pb-16" style={{ background: 'linear-gradient(135deg, #0A1628 0%, #0D2040 100%)' }}>
       <div className="bg-[#221810] px-4 pb-4 flex items-center gap-3 sticky top-0 z-10 border-b border-white/10" style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
         <button onClick={() => router.back()} className="text-white/60 hover:text-white text-xl">←</button>
         <p className="text-white font-bold flex-1">Delivery History</p>
@@ -39,7 +39,7 @@ export default function RiderHistoryPage() {
 
       <div className="max-w-lg mx-auto px-4 py-5 space-y-3">
         {loading && (
-          <div className="flex justify-center py-10"><div className="w-8 h-8 border-2 border-[#E8420A] border-t-transparent rounded-full animate-spin" /></div>
+          <div className="flex justify-center py-10"><div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: '#0E7BC4 transparent transparent transparent' }} /></div>
         )}
 
         {!loading && deliveries.length === 0 && (
@@ -58,7 +58,7 @@ export default function RiderHistoryPage() {
               <span className="text-white/30 text-xs">{new Date(d.createdAt).toLocaleDateString()}</span>
             </div>
             <div className="flex items-start gap-2"><span className="text-green-400 mt-0.5 text-xs">⬤</span><p className="text-white/70 text-sm flex-1 truncate">{d.pickupAddress}</p></div>
-            <div className="flex items-start gap-2"><span className="text-[#E8420A] mt-0.5 text-xs">⬤</span><p className="text-white/70 text-sm flex-1 truncate">{d.dropoffAddress}</p></div>
+            <div className="flex items-start gap-2"><span className="mt-0.5 text-xs" style={{ color: '#0E7BC4' }}>⬤</span><p className="text-white/70 text-sm flex-1 truncate">{d.dropoffAddress}</p></div>
             <div className="flex justify-between pt-1 border-t border-white/10">
               <span className="text-white/40 text-xs">{d.distanceKm?.toFixed(1)} km</span>
               <span className="text-green-400 font-bold text-sm">{fmt(d.riderEarningsNgn)}</span>

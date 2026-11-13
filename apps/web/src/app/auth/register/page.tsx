@@ -1,7 +1,7 @@
 'use client';
 
 // ============================================================
-// DROP LOGISTICS — Register Page (Customer self-registration)
+// VELTO MOBILITY PLATFORM — Register Page (Customer self-registration)
 // ============================================================
 
 import { useState } from 'react';
@@ -91,7 +91,7 @@ export default function RegisterPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-[#1A1208] flex flex-col items-center justify-center gap-4">
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4" style={{ background: 'linear-gradient(135deg, #0A1628 0%, #0D2040 60%, #0A2A3A 100%)' }}>
         <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center">
           <CheckCircle2 size={32} className="text-green-400" />
         </div>
@@ -102,15 +102,15 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#1A1208] flex flex-col items-center justify-center px-4 py-12">
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12" style={{ background: 'linear-gradient(135deg, #0A1628 0%, #0D2040 60%, #0A2A3A 100%)' }}>
 
       {/* Logo */}
       <div className="mb-8 flex flex-col items-center gap-3">
         <div className="w-14 h-14 rounded-2xl overflow-hidden shadow-lg">
-          <img src="/icons/logo.png" alt="Drop" className="w-full h-full object-cover" />
+          <img src="/icons/logo.svg" alt="Velto" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/icons/logo.png'; }} />
         </div>
         <h1 className="text-white text-2xl font-bold tracking-tight" style={{ fontFamily: 'var(--font-syne, sans-serif)' }}>
-          Drop
+          Velto
         </h1>
       </div>
 
@@ -131,7 +131,7 @@ export default function RegisterPage() {
               placeholder="Aminu Bello"
               required
               autoComplete="name"
-              className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/10 text-white placeholder-white/30 text-sm outline-none focus:border-[#E8420A] transition-colors"
+              className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/10 text-white placeholder-white/30 text-sm outline-none focus:border-[#0E7BC4] transition-colors"
             />
           </div>
 
@@ -145,7 +145,7 @@ export default function RegisterPage() {
               placeholder="you@example.com"
               required
               autoComplete="email"
-              className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/10 text-white placeholder-white/30 text-sm outline-none focus:border-[#E8420A] transition-colors"
+              className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/10 text-white placeholder-white/30 text-sm outline-none focus:border-[#0E7BC4] transition-colors"
             />
           </div>
 
@@ -159,7 +159,7 @@ export default function RegisterPage() {
               placeholder="08012345678"
               required
               autoComplete="tel"
-              className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/10 text-white placeholder-white/30 text-sm outline-none focus:border-[#E8420A] transition-colors"
+              className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/10 text-white placeholder-white/30 text-sm outline-none focus:border-[#0E7BC4] transition-colors"
             />
           </div>
 
@@ -174,7 +174,7 @@ export default function RegisterPage() {
                 placeholder="Min. 8 characters"
                 required
                 autoComplete="new-password"
-                className="w-full px-4 py-3 pr-11 rounded-xl bg-white/10 border border-white/10 text-white placeholder-white/30 text-sm outline-none focus:border-[#E8420A] transition-colors"
+                className="w-full px-4 py-3 pr-11 rounded-xl bg-white/10 border border-white/10 text-white placeholder-white/30 text-sm outline-none focus:border-[#0E7BC4] transition-colors"
               />
               <button
                 type="button"
@@ -212,7 +212,7 @@ export default function RegisterPage() {
                 placeholder="Repeat password"
                 required
                 autoComplete="new-password"
-                className="w-full px-4 py-3 pr-11 rounded-xl bg-white/10 border border-white/10 text-white placeholder-white/30 text-sm outline-none focus:border-[#E8420A] transition-colors"
+                className="w-full px-4 py-3 pr-11 rounded-xl bg-white/10 border border-white/10 text-white placeholder-white/30 text-sm outline-none focus:border-[#0E7BC4] transition-colors"
               />
               <button
                 type="button"
@@ -236,8 +236,8 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-3.5 rounded-xl bg-[#E8420A] text-white font-bold text-base flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95 transition-all mt-2"
-            style={{ boxShadow: '0 4px 20px rgba(232,66,10,0.35)' }}
+            className="w-full py-3.5 rounded-xl text-white font-bold text-base flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95 transition-all mt-2"
+            style={{ background: 'linear-gradient(135deg, #0E7BC4, #06C4A8)', boxShadow: '0 4px 20px rgba(14,123,196,0.40)' }}
           >
             {isLoading ? <Loader2 size={20} className="animate-spin" /> : 'Create account'}
           </button>
@@ -245,14 +245,14 @@ export default function RegisterPage() {
 
         <p className="text-center text-white/40 text-sm mt-6">
           Already have an account?{' '}
-          <Link href="/auth/login" className="text-[#E8420A] font-semibold hover:underline">
+          <Link href="/auth/login" className="font-semibold hover:underline" style={{ color: '#06C4A8' }}>
             Sign in
           </Link>
         </p>
       </div>
 
       <p className="mt-6 text-white/20 text-xs text-center max-w-xs">
-        By creating an account you agree to Drop&apos;s Terms of Service and Privacy Policy.
+        By creating an account you agree to Velto&apos;s Terms of Service and Privacy Policy.
       </p>
     </div>
   );

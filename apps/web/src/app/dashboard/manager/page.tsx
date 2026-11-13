@@ -32,20 +32,20 @@ export default function ManagerDashboard() {
 
   if (!isHydrated || !user) {
     return (
-      <div className="min-h-screen bg-[#1A1208] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-[#E8420A] border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #0A1628 0%, #0D2040 100%)' }}>
+        <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: '#0E7BC4 transparent transparent transparent' }} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#1A1208] text-white pb-8">
+    <div className="min-h-screen text-white pb-8" style={{ background: 'linear-gradient(135deg, #0A1628 0%, #0D2040 100%)' }}>
       <header className="border-b border-white/10 px-6 pb-4 flex items-center justify-between" style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg overflow-hidden">
-            <img src="/icons/logo.png" alt="Drop" className="w-full h-full object-cover" />
+            <img src="/icons/logo.svg" alt="Velto" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/icons/logo.png'; }} />
           </div>
-          <span className="font-bold" style={{ fontFamily: 'var(--font-syne)' }}>Drop</span>
+          <span className="font-bold" style={{ fontFamily: 'var(--font-syne)' }}>Velto</span>
           <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full font-medium">Manager</span>
         </div>
         <div className="flex items-center gap-3">
@@ -79,7 +79,7 @@ export default function ManagerDashboard() {
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: 'Total Deliveries', value: String(stats?.activeDeliveries ?? '—'), icon: Package,    color: '#E8420A' },
+            { label: 'Total Deliveries', value: String(stats?.activeDeliveries ?? '—'), icon: Package,    color: '#0E7BC4' },
             { label: 'Active Riders',    value: String(stats?.activeRiders ?? '—'),    icon: Bike,       color: '#22C55E' },
             { label: 'Total Users',      value: String(stats?.totalUsers ?? '—'),      icon: Users,      color: '#3B82F6' },
             { label: 'Businesses',       value: String(stats?.totalBusinesses ?? '—'), icon: DollarSign, color: '#A855F7' },
@@ -100,7 +100,7 @@ export default function ManagerDashboard() {
         <h2 className="text-xs font-semibold text-white/40 uppercase tracking-wider">Reports</h2>
         <div className="space-y-2">
           {[
-            { label: 'Delivery Reports',    desc: 'Completed, cancelled, failed',  icon: Package,    color: '#E8420A', href: '/dashboard/admin/deliveries' },
+            { label: 'Delivery Reports',    desc: 'Completed, cancelled, failed',  icon: Package,    color: '#0E7BC4', href: '/dashboard/admin/deliveries' },
             { label: 'Revenue Breakdown',   desc: 'Daily / weekly / monthly',      icon: BarChart2,  color: '#22C55E', href: '/dashboard/admin/revenue' },
             { label: 'Rider Performance',   desc: 'Ratings, trips, earnings',      icon: Bike,       color: '#A855F7', href: '/dashboard/admin/users?role=RIDER' },
             { label: 'Business Accounts',   desc: 'View subscriptions (read-only)', icon: Users,     color: '#3B82F6', href: '/dashboard/admin/businesses' },

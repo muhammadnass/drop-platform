@@ -390,9 +390,9 @@ export default function RiderDashboard() {
             </div>
             <div className="space-y-2 mb-4">
               <div className="flex gap-2 text-sm"><div className="w-2 h-2 rounded-full bg-green-400 mt-1.5 shrink-0" /><span className="text-white/70">{activeDelivery.pickupAddress}</span></div>
-              <div className="flex gap-2 text-sm"><div className="w-2 h-2 rounded-full bg-[#E8420A] mt-1.5 shrink-0" /><span className="text-white/70">{activeDelivery.dropoffAddress}</span></div>
+              <div className="flex gap-2 text-sm"><div className="w-2 h-2 rounded-full bg-[#0E7BC4] mt-1.5 shrink-0" /><span className="text-white/70">{activeDelivery.dropoffAddress}</span></div>
             </div>
-            <button onClick={navigateToPickup} className="w-full mb-2 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-[#E8420A]/20 text-[#E8420A] text-sm font-semibold">
+            <button onClick={navigateToPickup} className="w-full mb-2 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-[#0E7BC4]/20 text-[#0E7BC4] text-sm font-semibold">
               <Navigation size={15} /> Open in Google Maps (to pickup)
             </button>
             <div className="flex gap-2">
@@ -406,15 +406,15 @@ export default function RiderDashboard() {
         {/* Go online toggle */}
         {!activeDelivery && (
           <button onClick={handleGoOnline}
-            className={`w-full py-5 rounded-2xl font-bold text-lg transition-all active:scale-95 ${isOnline ? 'bg-white/10 border border-white/20 text-white/60' : 'bg-[#E8420A] text-white'}`}
-            style={!isOnline ? { boxShadow: '0 4px 24px rgba(232,66,10,0.4)' } : {}}>
+            className={`w-full py-5 rounded-2xl font-bold text-lg transition-all active:scale-95 ${isOnline ? 'bg-white/10 border border-white/20 text-white/60' : 'text-white'}`}
+            style={!isOnline ? { background: 'linear-gradient(135deg, #0E7BC4, #06C4A8)', boxShadow: '0 4px 24px rgba(14,123,196,0.4)' } : {}}>
             {isOnline ? 'Go Offline' : 'Go Online — Start Earning'}
           </button>
         )}
 
         {isOnline && !activeDelivery && (
           <div className="flex flex-col items-center gap-2 py-6 text-white/30">
-            <div className="w-10 h-10 rounded-full border-2 border-[#E8420A]/30 border-t-[#E8420A] animate-spin" />
+            <div className="w-10 h-10 rounded-full border-2 border-[#0E7BC4]/30 border-t-[#0E7BC4] animate-spin" />
             <p className="text-sm mt-2">Waiting for orders…</p>
           </div>
         )}
@@ -445,5 +445,5 @@ export default function RiderDashboard() {
 }
 
 function Spin() {
-  return <div className="min-h-screen bg-[#1A1208] flex items-center justify-center"><div className="w-8 h-8 border-2 border-[#E8420A] border-t-transparent rounded-full animate-spin" /></div>;
+  return <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #0A1628 0%, #0D2040 100%)' }}><div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: '#0E7BC4 transparent transparent transparent' }} /></div>;
 }

@@ -779,8 +779,8 @@ export default function CustomerDashboard() {
                 point at the same page, which was redundant). */}
             <button onClick={() => router.push('/dashboard/customer/history')}
               className="bg-orange-500 rounded-2xl pl-2 pr-4 py-2 shadow-lg flex items-center gap-2 active:scale-95 transition-all">
-              <img src="/icons/logo.png" alt="" className="w-6 h-6 rounded-lg object-cover" />
-              <span className="font-bold text-white tracking-widest text-lg">DROP</span>
+              <img src="/icons/logo.svg" alt="Velto" className="w-6 h-6 rounded-lg object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/icons/logo.png'; }} />
+              <span className="font-bold text-white tracking-widest text-lg">VELTO</span>
             </button>
             <div className="flex items-center gap-2">
               <div className="bg-black/60 backdrop-blur rounded-full px-4 py-2 flex items-center gap-2">

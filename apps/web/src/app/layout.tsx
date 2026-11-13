@@ -17,8 +17,8 @@ const syne = Syne({
 });
 
 export const metadata: Metadata = {
-  title: 'Drop — Whatever you need, dropped in minutes',
-  description: 'Fast, reliable delivery across Nigeria. Drop Mini, Flex, and Max for every shipment size.',
+  title: 'Velto — Move anything, anywhere in minutes',
+  description: 'Fast, reliable delivery across Nigeria. Velto Mini, Flex, and Max for every shipment size. Powered by Velto Mobility Platform Limited.',
   manifest: '/manifest.json',
   icons: {
     icon: [
@@ -31,21 +31,18 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'Drop',
+    title: 'Velto',
   },
   formatDetection: { telephone: false },
 };
 
-// Separate `viewport` export (required by Next.js 14 App Router) — without this,
-// iOS Safari/home-screen apps don't get device-width scaling or safe-area insets,
-// which is why the layout required pinch-zooming to see the full screen.
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
   viewportFit: 'cover',
-  themeColor: '#1A1208',
+  themeColor: '#0A1628',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -57,12 +54,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           position="top-center"
           toastOptions={{
             style: {
-              background: '#1f1208',
+              background: '#0A1628',
               color: '#fff',
               border: '1px solid rgba(255,255,255,0.1)',
               borderRadius: '12px',
             },
-            success: { iconTheme: { primary: '#E8420A', secondary: '#fff' } },
+            success: { iconTheme: { primary: '#0E7BC4', secondary: '#fff' } },
           }}
         />
       </body>

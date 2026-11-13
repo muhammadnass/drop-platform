@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/lib/api';
 
 function fmt(n: number) { return `₦${Math.round(n).toLocaleString()}`; }
-function Spinner() { return <div className="w-8 h-8 border-2 border-[#E8420A] border-t-transparent rounded-full animate-spin mx-auto" />; }
+function Spinner() { return <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin mx-auto" style={{ borderColor: '#0E7BC4 transparent transparent transparent' }} />; }
 
 export default function RiderEarningsPage() {
   const router = useRouter();
@@ -36,17 +36,17 @@ export default function RiderEarningsPage() {
     }
   };
 
-  if (loading) return <div className="min-h-screen bg-[#1A1208] flex items-center justify-center"><Spinner /></div>;
+  if (loading) return <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #0A1628 0%, #0D2040 100%)' }}><Spinner /></div>;
 
   return (
-    <div className="min-h-screen bg-[#1A1208] text-white pb-16">
+    <div className="min-h-screen text-white pb-16" style={{ background: 'linear-gradient(135deg, #0A1628 0%, #0D2040 100%)' }}>
       <div className="bg-[#221810] px-4 pb-4 flex items-center gap-3 sticky top-0 z-10 border-b border-white/10" style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
         <button onClick={() => router.back()} className="text-white/60 hover:text-white text-xl">←</button>
         <p className="text-white font-bold flex-1">Earnings & Wallet</p>
       </div>
 
       <div className="max-w-lg mx-auto px-4 py-5 space-y-5">
-        <div className="bg-gradient-to-br from-[#E8420A]/20 to-[#E8420A]/5 border border-[#E8420A]/20 rounded-2xl p-5">
+        <div className="bg-gradient-to-br from-[#0E7BC4]/20 to-[#0E7BC4]/5 border border-[#0E7BC4]/20 rounded-2xl p-5">
           <p className="text-white/50 text-xs uppercase tracking-widest mb-1">Wallet balance</p>
           <div className="flex items-center justify-between">
             <div>
@@ -54,7 +54,7 @@ export default function RiderEarningsPage() {
               <p className="text-white/40 text-xs mt-1">Lifetime earnings: {fmt(wallet?.lifetimeEarningsNgn ?? 0)}</p>
             </div>
             <button onClick={() => setShowTopup(true)}
-              className="bg-[#E8420A] hover:bg-[#ff5420] text-white font-semibold px-4 py-2.5 rounded-xl text-sm transition-all active:scale-95">
+              className="text-white font-semibold px-4 py-2.5 rounded-xl text-sm transition-all active:scale-95" style={{ background: 'linear-gradient(135deg, #0E7BC4, #06C4A8)' }}>
               + Top Up
             </button>
           </div>
@@ -92,18 +92,18 @@ export default function RiderEarningsPage() {
             <div className="grid grid-cols-4 gap-2">
               {[1000, 2000, 5000, 10000].map((p) => (
                 <button key={p} onClick={() => setAmount(String(p))}
-                  className={`py-2 rounded-xl text-xs font-semibold border ${amount === String(p) ? 'border-[#E8420A] bg-[#E8420A]/10 text-white' : 'border-white/10 text-white/60'}`}>
+                  className={`py-2 rounded-xl text-xs font-semibold border ${amount === String(p) ? 'border-[#0E7BC4] bg-[#0E7BC4]/10 text-white' : 'border-white/10 text-white/60'}`}>
                   {fmt(p)}
                 </button>
               ))}
             </div>
             <input value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^0-9]/g, ''))}
               placeholder="Enter amount (₦)" inputMode="numeric"
-              className="w-full bg-white/10 text-white px-4 py-3 rounded-xl text-sm outline-none placeholder-white/30 focus:ring-2 focus:ring-[#E8420A]/50" />
+              className="w-full bg-white/10 text-white px-4 py-3 rounded-xl text-sm outline-none placeholder-white/30 focus:ring-2 focus:ring-[#0E7BC4]/50" />
             {error && <p className="text-red-400 text-xs">{error}</p>}
             <div className="flex gap-3">
               <button onClick={() => setShowTopup(false)} className="flex-1 py-3 rounded-xl border border-white/20 text-white/60 font-semibold">Cancel</button>
-              <button onClick={topup} disabled={busy} className="flex-grow py-3 rounded-xl bg-[#E8420A] text-white font-bold disabled:opacity-40">
+              <button onClick={topup} disabled={busy} className="flex-grow py-3 rounded-xl text-white font-bold disabled:opacity-40" style={{ background: 'linear-gradient(135deg, #0E7BC4, #06C4A8)' }}>
                 {busy ? <Spinner /> : 'Continue to pay'}
               </button>
             </div>

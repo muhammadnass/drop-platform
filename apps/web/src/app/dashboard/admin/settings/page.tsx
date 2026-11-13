@@ -65,7 +65,7 @@ export default function AdminSettingsPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#1A1208] text-white pb-10">
+    <div className="min-h-screen text-white pb-10" style={{ background: 'linear-gradient(135deg, #0A1628 0%, #0D2040 100%)' }}>
       <header className="border-b border-white/10 px-6 py-4 flex items-center gap-4">
         <button onClick={() => router.push('/dashboard/admin')} className="text-white/40 hover:text-white"><ArrowLeft size={20} /></button>
         <div className="flex-1">
@@ -86,7 +86,7 @@ export default function AdminSettingsPage() {
             <div key={f.key} className="bg-white/5 border border-white/10 rounded-2xl p-5">
               <div className="flex items-center justify-between mb-1">
                 <div className="font-semibold text-sm">{f.label}</div>
-                <div className="font-bold text-[#E8420A]">
+                <div className="font-bold" style={{ color: '#0E7BC4' }}>
                   {fetching ? <span className="w-12 h-5 bg-white/10 rounded animate-pulse inline-block" /> : `${config[f.key]}${f.unit}`}
                 </div>
               </div>
@@ -97,7 +97,7 @@ export default function AdminSettingsPage() {
                 value={config[f.key]}
                 disabled={!isSuperAdmin || fetching}
                 onChange={(e) => setConfig((prev) => ({ ...prev, [f.key]: Number(e.target.value) }))}
-                className="w-full accent-[#E8420A] disabled:opacity-40"
+                className="w-full disabled:opacity-40" style={{ accentColor: '#0E7BC4' }} 
               />
               <div className="flex justify-between text-white/30 text-xs mt-1">
                 <span>{f.min}{f.unit}</span><span>{f.max}{f.unit}</span>
@@ -110,8 +110,8 @@ export default function AdminSettingsPage() {
           <button
             onClick={handleSave}
             disabled={loading || fetching}
-            className="w-full py-4 rounded-2xl bg-[#E8420A] text-white font-bold disabled:opacity-50 active:scale-95 transition-all flex items-center justify-center gap-2"
-            style={{ boxShadow: '0 4px 20px rgba(232,66,10,0.35)' }}
+            className="w-full py-4 rounded-2xl text-white font-bold disabled:opacity-50 active:scale-95 transition-all flex items-center justify-center gap-2"
+            style={{ background: 'linear-gradient(135deg, #0E7BC4, #06C4A8)', boxShadow: '0 4px 20px rgba(14,123,196,0.35)' }}
           >
             {saved ? <><CheckCircle2 size={18} className="text-white" /> Saved!</> :
              loading ? <><RefreshCw size={18} className="animate-spin" /> Saving…</> :
@@ -132,5 +132,5 @@ export default function AdminSettingsPage() {
 }
 
 function Spin() {
-  return <div className="min-h-screen bg-[#1A1208] flex items-center justify-center"><div className="w-8 h-8 border-2 border-[#E8420A] border-t-transparent rounded-full animate-spin" /></div>;
+  return <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #0A1628 0%, #0D2040 100%)' }}><div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: '#0E7BC4 transparent transparent transparent' }} /></div>;
 }

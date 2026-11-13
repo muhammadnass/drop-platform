@@ -1,9 +1,9 @@
 {
-  "name": "Drop Logistics",
-  "short_name": "Drop",
-  "description": "Whatever you need, dropped in minutes.",
-  "theme_color": "#F2650A",
-  "background_color": "#1A1208",
+  "name": "Velto Mobility Platform",
+  "short_name": "Velto",
+  "description": "Move anything, anywhere in minutes. Powered by Velto Mobility Platform Limited.",
+  "theme_color": "#0E7BC4",
+  "background_color": "#0A1628",
   "display": "standalone",
   "orientation": "portrait",
   "scope": "/",
@@ -14,5 +14,5 @@
     { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
     { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
-  "categories": ["logistics", "delivery", "navigation"]
+  "categories": ["logistics", "delivery", "navigation", "mobility"]
 }

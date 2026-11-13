@@ -6,6 +6,12 @@
   :root {
     --safe-area-top: env(safe-area-inset-top, 0px);
     --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+    /* Velto brand tokens as CSS variables for hardcoded overrides */
+    --velto-primary:  #0E7BC4;
+    --velto-teal:     #06C4A8;
+    --velto-dark:     #0A1628;
+    --velto-light:    #F0F8FF;
+    --velto-shadow:   rgba(14, 123, 196, 0.35);
   }
   * { box-sizing: border-box; }
   html, body {

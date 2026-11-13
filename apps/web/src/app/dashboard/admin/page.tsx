@@ -51,19 +51,19 @@ export default function AdminDashboard() {
   if (!isHydrated || !user) return <Loader />;
 
   const cards = [
-    { label: 'Total Users',        value: stats?.totalUsers ?? '—',        icon: Users,    color: '#E8420A' },
+    { label: 'Total Users',        value: stats?.totalUsers ?? '—',        icon: Users,    color: '#0E7BC4' },
     { label: 'Active Deliveries',  value: stats?.activeDeliveries ?? '—',  icon: Activity, color: '#22C55E' },
     { label: 'Revenue This Month', value: stats ? fmt(stats.monthlyRevenueNgn) : '—', icon: DollarSign, color: '#A855F7' },
     { label: 'Active Riders',      value: stats?.activeRiders ?? '—',      icon: Bike,     color: '#3B82F6' },
   ];
 
   return (
-    <div className="min-h-screen bg-[#1A1208] text-white pb-10">
+    <div className="min-h-screen text-white pb-10" style={{ background: 'linear-gradient(135deg, #0A1628 0%, #0D2040 100%)' }}>
       <header className="border-b border-white/10 px-6 pb-4 flex items-center justify-between" style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
         <div className="flex items-center gap-3">
           <DropLogo />
-          <span className="font-bold" style={{ fontFamily: 'var(--font-syne)' }}>Drop</span>
-          <span className="text-xs bg-[#E8420A]/20 text-[#E8420A] px-2 py-0.5 rounded-full">Super Admin</span>
+          <span className="font-bold" style={{ fontFamily: 'var(--font-syne)' }}>Velto</span>
+          <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'rgba(14,123,196,0.2)', color: '#0E7BC4' }}>Super Admin</span>
         </div>
         <div className="flex items-center gap-4">
           <span className="text-white/40 text-sm hidden sm:block">{user.email}</span>
@@ -120,7 +120,7 @@ export default function AdminDashboard() {
         <h2 className="text-xs font-semibold text-white/40 uppercase tracking-wider pt-2">Management</h2>
         <div className="space-y-2">
           {[
-            { label: 'User Management',    desc: 'View, edit roles, deactivate accounts', icon: Users,     color: '#E8420A', href: '/dashboard/admin/users' },
+            { label: 'User Management',    desc: 'View, edit roles, deactivate accounts', icon: Users,     color: '#0E7BC4', href: '/dashboard/admin/users' },
             { label: 'All Deliveries',     desc: 'Live and historical order feed',        icon: Package,   color: '#22C55E', href: '/dashboard/admin/deliveries' },
             { label: 'Revenue & Analytics', desc: '6-month breakdown, GMV, fees',         icon: TrendingUp, color: '#A855F7', href: '/dashboard/admin/revenue' },
             { label: 'Business Accounts',  desc: 'Subscriptions, rider fleets',           icon: Building2, color: '#3B82F6', href: '/dashboard/admin/businesses' },
@@ -148,8 +148,8 @@ export default function AdminDashboard() {
 
 function Loader() {
   return (
-    <div className="min-h-screen bg-[#1A1208] flex items-center justify-center">
-      <div className="w-8 h-8 border-2 border-[#E8420A] border-t-transparent rounded-full animate-spin" />
+    <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #0A1628 0%, #0D2040 100%)' }}>
+      <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: '#0E7BC4 transparent transparent transparent' }} />
     </div>
   );
 }
@@ -157,7 +157,7 @@ function Loader() {
 function DropLogo() {
   return (
     <div className="w-8 h-8 rounded-lg overflow-hidden">
-      <img src="/icons/logo.png" alt="Drop" className="w-full h-full object-cover" />
+      <img src="/icons/logo.svg" alt="Velto" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/icons/logo.png'; }} />
     </div>
   );
 }

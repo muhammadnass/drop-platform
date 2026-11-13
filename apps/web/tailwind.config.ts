@@ -8,55 +8,60 @@ const config: Config = {
   ],
   theme: {
     extend: {
-      // ── DROP Brand Color System ──────────────────────────────
+      // ── VELTO Brand Color System ──────────────────────────────
       colors: {
-        // Override Tailwind's default `orange` scale with the brand orange
-        // sampled from the new DROP logo (#F2650A). Most of the app uses
-        // plain `orange-400`/`orange-500`/etc. classes rather than the
-        // `drop-orange` tokens below, so overriding the scale here is what
-        // actually re-themes those existing classes app-wide.
+        // Override Tailwind's default `orange` scale with Velto Blue
+        // so any existing `orange-*` class instantly reflects the new brand.
         orange: {
-          50:  '#FFF4ED',
-          100: '#FFE6D2',
-          200: '#FFC8A0',
-          300: '#FFA266',
-          400: '#FF7D33',
-          500: '#F2650A',
-          600: '#D34F02',
-          700: '#A93E00',
-          800: '#812F00',
-          900: '#592000',
-          950: '#3D1600',
+          50:  '#EFF6FF',
+          100: '#DBEAFE',
+          200: '#BFDBFE',
+          300: '#93C5FD',
+          400: '#60A5FA',
+          500: '#3B82F6',
+          600: '#2563EB',
+          700: '#1D4ED8',
+          800: '#1E40AF',
+          900: '#1E3A8A',
+          950: '#172554',
         },
+        // Keep `drop-*` token names (too many references) — just update values to Velto palette.
         drop: {
-          // Primary – Vibrant orange from the logo
+          // Primary – Velto Blue (replaces the old orange)
           orange: {
-            DEFAULT: '#F2650A',
-            50:  '#FFF4ED',
-            100: '#FFE6D2',
-            200: '#FFC8A0',
-            300: '#FFA266',
-            400: '#FF7D33',
-            500: '#F2650A', // brand primary — sampled from the DROP logo parachute
-            600: '#D34F02',
-            700: '#A93E00',
-            800: '#812F00',
-            900: '#592000',
+            DEFAULT: '#0E7BC4',
+            50:  '#EFF6FF',
+            100: '#DBEAFE',
+            200: '#BFDBFE',
+            300: '#93C5FD',
+            400: '#60A5FA',
+            500: '#0E7BC4', // Velto Blue primary
+            600: '#0369A1',
+            700: '#075985',
+            800: '#0C4A6E',
+            900: '#082F49',
           },
-          // Neutral – warm charcoal for text & surfaces
+          // Neutral – cool deep navy for text & surfaces
           ink: {
-            DEFAULT: '#1A1208',
-            light:   '#3D2E1E',
-            muted:   '#7A6652',
+            DEFAULT: '#0A1628',
+            light:   '#1E3A5F',
+            muted:   '#4A7FA0',
           },
-          // Surface tones
-          cream:   '#FAF7F4',
-          sand:    '#F0EBE3',
+          // Surface tones — cool blue-tinted
+          cream:   '#F0F8FF',
+          sand:    '#DBEAFE',
           // Status
           success: '#16A34A',
           warning: '#D97706',
           error:   '#DC2626',
-          info:    '#2563EB',
+          info:    '#0E7BC4',
+        },
+        // Also expose the Velto teal accent directly
+        velto: {
+          blue:  '#0E7BC4',
+          teal:  '#06C4A8',
+          navy:  '#0A1628',
+          light: '#F0F8FF',
         },
       },
 
@@ -64,7 +69,7 @@ const config: Config = {
       fontFamily: {
         sans:    ['var(--font-inter)', 'system-ui', 'sans-serif'],
         mono:    ['ui-monospace', 'monospace'],
-        display: ['var(--font-syne)', 'sans-serif'], // bold display headlines
+        display: ['var(--font-syne)', 'sans-serif'],
       },
 
       // ── Spacing / Layout ─────────────────────────────────────
@@ -75,9 +80,9 @@ const config: Config = {
 
       // ── Shadows ──────────────────────────────────────────────
       boxShadow: {
-        'card':   '0 2px 8px 0 rgba(26,18,8,0.08)',
-        'card-lg':'0 8px 32px 0 rgba(26,18,8,0.12)',
-        'orange': '0 4px 20px 0 rgba(232,66,10,0.35)',
+        'card':    '0 2px 8px 0 rgba(10,22,40,0.08)',
+        'card-lg': '0 8px 32px 0 rgba(10,22,40,0.12)',
+        'blue':    '0 4px 20px 0 rgba(14,123,196,0.35)',
       },
 
       // ── Animation ────────────────────────────────────────────

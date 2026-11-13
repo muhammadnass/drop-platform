@@ -109,7 +109,7 @@ export default function BookPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#1A1208] text-white">
+    <div className="min-h-screen text-white" style={{ background: 'linear-gradient(135deg, #0A1628 0%, #0D2040 100%)' }}>
       <header className="border-b border-white/10 px-6 py-4 flex items-center gap-4">
         <button onClick={goBack} className="text-white/40 hover:text-white transition-colors"><ArrowLeft size={20} /></button>
         <div>
@@ -117,7 +117,7 @@ export default function BookPage() {
           <div className="text-white/40 text-xs">Step {stepIdx} of 4</div>
         </div>
       </header>
-      <div className="h-1 bg-white/5"><div className="h-1 bg-[#E8420A] transition-all duration-500" style={{ width: `${stepIdx * 25}%` }} /></div>
+      <div className="h-1 bg-white/5"><div className="h-1 transition-all duration-500" style={{ background: 'linear-gradient(90deg, #0E7BC4, #06C4A8)', width: `${stepIdx * 25}%` }} /></div>
 
       <div className="max-w-lg mx-auto px-6 py-6">
 
@@ -130,8 +130,8 @@ export default function BookPage() {
               <input value={dropoff} onChange={(e) => setDropoff(e.target.value)} placeholder="Dropoff address" className="input" />
             </div>
             <button onClick={handleRouteNext} disabled={!pickup.trim() || !dropoff.trim() || estimating}
-              className="w-full py-4 rounded-2xl bg-[#E8420A] text-white font-bold disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95 transition-all"
-              style={{ boxShadow: '0 4px 20px rgba(232,66,10,0.35)' }}>
+              className="w-full py-4 rounded-2xl text-white font-bold disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95 transition-all"
+              style={{ background: 'linear-gradient(135deg, #0E7BC4, #06C4A8)', boxShadow: '0 4px 20px rgba(14,123,196,0.35)' }}>
               {estimating ? <><Loader2 size={18} className="animate-spin" /> Getting fares…</> : 'Continue →'}
             </button>
           </div>
@@ -150,16 +150,16 @@ export default function BookPage() {
                 <div key={f.label} className="space-y-1.5">
                   <label className="text-white/60 text-xs font-medium">{f.label}</label>
                   <input value={f.val} onChange={(e) => f.set(e.target.value)} placeholder={f.ph}
-                    className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/10 text-white placeholder-white/30 text-sm outline-none focus:border-[#E8420A] transition-colors" />
+                    className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/10 text-white placeholder-white/30 text-sm outline-none focus:border-[#0E7BC4] transition-colors" />
                 </div>
               ))}
               <div className="space-y-1.5">
                 <label className="text-white/60 text-xs font-medium flex items-center gap-1.5"><FileText size={12} /> Notes <span className="text-white/30">(optional)</span></label>
                 <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Fragile, call before arriving…" rows={2}
-                  className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/10 text-white placeholder-white/30 text-sm outline-none focus:border-[#E8420A] resize-none transition-colors" />
+                  className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/10 text-white placeholder-white/30 text-sm outline-none focus:border-[#0E7BC4] resize-none transition-colors" />
               </div>
             </div>
-            <button onClick={() => setStep('tier')} className="w-full py-4 rounded-2xl bg-[#E8420A] text-white font-bold active:scale-95 transition-all" style={{ boxShadow: '0 4px 20px rgba(232,66,10,0.35)' }}>
+            <button onClick={() => setStep('tier')} className="w-full py-4 rounded-2xl text-white font-bold active:scale-95 transition-all" style={{ background: 'linear-gradient(135deg, #0E7BC4, #06C4A8)', boxShadow: '0 4px 20px rgba(14,123,196,0.35)' }}>
               Choose Vehicle →
             </button>
           </div>
@@ -172,11 +172,11 @@ export default function BookPage() {
               <h2 className="text-xl font-bold">Choose vehicle</h2>
               <p className="text-white/40 text-sm">{distance} km · includes 8% platform fee</p>
             </div>
-            {loadingTiers ? <div className="flex justify-center py-12"><Loader2 size={28} className="animate-spin text-[#E8420A]" /></div> : (
+            {loadingTiers ? <div className="flex justify-center py-12"><Loader2 size={28} className="animate-spin" style={{ color: '#0E7BC4' }} /></div> : (
               <div className="space-y-3">
                 {tiers.map((t) => (
                   <button key={t.id} onClick={() => setSelectedTier(t.id)}
-                    className={`w-full flex items-center justify-between rounded-2xl p-4 border transition-all ${selectedTier === t.id ? 'border-[#E8420A] bg-[#E8420A]/10' : 'border-white/10 bg-white/5 hover:border-white/20'}`}>
+                    className={`w-full flex items-center justify-between rounded-2xl p-4 border transition-all ${selectedTier === t.id ? 'border-[#0E7BC4] bg-[#0E7BC4]/10' : 'border-white/10 bg-white/5 hover:border-white/20'}`}>
                     <div className="flex items-center gap-3">
                       <span className="text-2xl">{t.emoji}</span>
                       <div className="text-left">
@@ -192,7 +192,7 @@ export default function BookPage() {
               </div>
             )}
             <button onClick={() => setStep('confirm')} disabled={loadingTiers}
-              className="w-full py-4 rounded-2xl bg-[#E8420A] text-white font-bold disabled:opacity-50 active:scale-95 transition-all" style={{ boxShadow: '0 4px 20px rgba(232,66,10,0.35)' }}>
+              className="w-full py-4 rounded-2xl text-white font-bold disabled:opacity-50 active:scale-95 transition-all" style={{ background: 'linear-gradient(135deg, #0E7BC4, #06C4A8)', boxShadow: '0 4px 20px rgba(14,123,196,0.35)' }}>
               Review Order →
             </button>
           </div>
@@ -206,7 +206,7 @@ export default function BookPage() {
               <div className="pb-4">
                 <div className="text-xs text-white/40 uppercase tracking-wider mb-2">Route</div>
                 <div className="text-sm flex gap-2 items-center"><span className="w-2 h-2 rounded-full bg-green-400 shrink-0" />{pickup}</div>
-                <div className="text-sm flex gap-2 items-center mt-1.5"><span className="w-2 h-2 rounded-full bg-[#E8420A] shrink-0" />{dropoff}</div>
+                <div className="text-sm flex gap-2 items-center mt-1.5"><span className="w-2 h-2 rounded-full bg-[#0E7BC4] shrink-0" />{dropoff}</div>
               </div>
               <div className="py-4">
                 <div className="text-xs text-white/40 uppercase tracking-wider mb-2">Vehicle</div>
@@ -229,7 +229,7 @@ export default function BookPage() {
                 <div className="flex justify-between text-white/60"><span>Base fare</span><span>₦{(sel.totalFareNgn - sel.platformFeeNgn).toLocaleString()}</span></div>
                 <div className="flex justify-between text-white/60"><span>Platform fee (8%)</span><span>₦{sel.platformFeeNgn.toLocaleString()}</span></div>
                 <div className="flex justify-between font-bold text-base border-t border-white/10 pt-2 mt-1">
-                  <span>Total</span><span className="text-[#E8420A]">₦{sel.totalFareNgn.toLocaleString()}</span>
+                  <span>Total</span><span style={{ color: '#0E7BC4' }}>₦{sel.totalFareNgn.toLocaleString()}</span>
                 </div>
               </div>
             </div>
@@ -237,8 +237,8 @@ export default function BookPage() {
             {error && <div className="flex items-center gap-2 text-red-400 text-sm bg-red-400/10 rounded-xl px-3 py-2.5"><AlertCircle size={15} />{error}</div>}
 
             <button onClick={handlePay} disabled={booking}
-              className="w-full py-4 rounded-2xl bg-[#E8420A] text-white font-bold disabled:opacity-50 active:scale-95 transition-all flex items-center justify-center gap-2"
-              style={{ boxShadow: '0 4px 20px rgba(232,66,10,0.35)' }}>
+              className="w-full py-4 rounded-2xl text-white font-bold disabled:opacity-50 active:scale-95 transition-all flex items-center justify-center gap-2"
+              style={{ background: 'linear-gradient(135deg, #0E7BC4, #06C4A8)', boxShadow: '0 4px 20px rgba(14,123,196,0.35)' }}>
               {booking ? <><Loader2 size={18} className="animate-spin" /> Opening Paystack…</> : <>Pay ₦{sel.totalFareNgn.toLocaleString()} →</>}
             </button>
             <p className="text-center text-white/30 text-xs">Secured by Paystack · Encrypted payment</p>
@@ -249,12 +249,12 @@ export default function BookPage() {
       <style jsx>{`
         .input { width:100%; padding:12px 16px; border-radius:12px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.1); color:white; font-size:14px; outline:none; }
         .input::placeholder { color:rgba(255,255,255,0.3); }
-        .input:focus { border-color:#E8420A; }
+        .input:focus { border-color:#0E7BC4; }
       `}</style>
     </div>
   );
 }
 
 function Spin() {
-  return <div className="min-h-screen bg-[#1A1208] flex items-center justify-center"><div className="w-8 h-8 border-2 border-[#E8420A] border-t-transparent rounded-full animate-spin" /></div>;
+  return <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #0A1628 0%, #0D2040 100%)' }}><div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: '#0E7BC4 transparent transparent transparent' }} /></div>;
 }

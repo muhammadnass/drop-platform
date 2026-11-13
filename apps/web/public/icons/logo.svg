@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+  <defs>
+    <linearGradient id="veltoBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0E7BC4"/>
+      <stop offset="100%" stop-color="#06C4A8"/>
+    </linearGradient>
+  </defs>
+  <!-- Rounded square background -->
+  <rect width="48" height="48" rx="13" fill="url(#veltoBg)"/>
+  <!-- V mark: two arms suggesting velocity and forward motion -->
+  <polygon points="8,12 18,12 24,36 20,36" fill="white"/>
+  <polygon points="30,12 40,12 28,36 24,36" fill="white"/>
+</svg>
