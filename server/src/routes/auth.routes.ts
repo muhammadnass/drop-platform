@@ -280,6 +280,38 @@ router.delete('/me', authMiddleware, async (req: AuthRequest, res: Response) => 
   }
 });
 
+// ── PATCH /api/auth/me ── Update own profile ─────────────────
+const UpdateMeSchema = z.object({
+  name:      z.string().min(2).max(80).optional(),
+  avatarUrl: z.string().max(500_000).optional(), // base64 data URL or https URL
+});
+
+router.patch('/me', authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const result = UpdateMeSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ success: false, error: result.error.flatten() });
+    }
+    const { name, avatarUrl } = result.data;
+    if (!name && !avatarUrl) {
+      return res.status(400).json({ success: false, error: 'Nothing to update' });
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: req.user!.userId },
+      data: {
+        ...(name      && { name }),
+        ...(avatarUrl && { avatarUrl }),
+      },
+    });
+
+    return res.json({ success: true, data: userPublic(updated) });
+  } catch (err) {
+    console.error('[auth/me PATCH] error:', err);
+    return res.status(500).json({ success: false, error: 'Failed to update profile' });
+  }
+});
+
 // ── POST /api/auth/forgot-password ───────────────────────────
 router.post('/forgot-password', async (req: Request, res: Response) => {
   try {

@@ -21,12 +21,15 @@ function fmt(n: number) { return `₦${Math.round(n).toLocaleString()}`; }
     onCapture(b64);
     e.target.value = '';
   };
-  const resolved = url ? (url.startsWith('http') ? url : `${SERVER_BASE}${url}`) : null;
+  // Accept base64 data URLs, absolute https URLs, or relative server paths
+  const resolved = url
+    ? (url.startsWith('data:') || url.startsWith('http') ? url : `${SERVER_BASE}${url}`)
+    : null;
   const initial = (name ?? '?').trim().charAt(0).toUpperCase();
   return (
     <div className="flex flex-col items-center gap-2">
       <button onClick={() => ref.current?.click()} disabled={loading}
-        className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-orange-500/60 bg-[#2a2a2a] flex items-center justify-center">
+        className="relative w-20 h-20 rounded-full overflow-hidden border-2 bg-[#2a2a2a] flex items-center justify-center" style={{ borderColor: '#0E7BC4' }}>
         {resolved
           ? <img src={resolved} className="w-full h-full object-cover" alt="Profile" />
           : loading ? <Spinner /> : <span className="text-2xl font-bold text-white/60">{initial}</span>
@@ -66,18 +69,19 @@ function FundWalletSheet({ onClose, onInitiated }: { onClose: () => void; onInit
         <div className="grid grid-cols-4 gap-2">
           {presets.map((p) => (
             <button key={p} onClick={() => setAmount(String(p))}
-              className={`py-2 rounded-xl text-xs font-semibold border ${amount === String(p) ? 'border-orange-500 bg-orange-500/10 text-white' : 'border-white/10 text-white/60'}`}>
+              className={`py-2 rounded-xl text-xs font-semibold border ${amount === String(p) ? 'text-white' : 'border-white/10 text-white/60'}`}
+              style={amount === String(p) ? { borderColor: '#0E7BC4', background: 'rgba(14,123,196,0.12)' } : {}}>
               {fmt(p)}
             </button>
           ))}
         </div>
         <input value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^0-9]/g, ''))}
           placeholder="Enter amount (₦)" inputMode="numeric"
-          className="w-full bg-[#2a2a2a] text-white px-4 py-3 rounded-xl text-sm outline-none placeholder-white/30 focus:ring-2 focus:ring-orange-500/50" />
+          className="w-full bg-[#2a2a2a] text-white px-4 py-3 rounded-xl text-sm outline-none placeholder-white/30" />
         {error && <p className="text-red-400 text-xs">{error}</p>}
         <div className="flex gap-3">
           <button onClick={onClose} className="flex-1 py-3 rounded-xl border border-white/20 text-white/60 font-semibold">Cancel</button>
-          <button onClick={submit} disabled={busy} className="flex-grow py-3 rounded-xl bg-orange-500 text-white font-bold disabled:opacity-40">
+          <button onClick={submit} disabled={busy} className="flex-grow py-3 rounded-xl text-white font-bold disabled:opacity-40" style={{ background: 'linear-gradient(135deg, #0E7BC4, #06C4A8)' }}>
             {busy ? <Spinner /> : 'Continue to pay'}
           </button>
         </div>
@@ -102,8 +106,8 @@ export default function CustomerSettingsPage() {
     setAvatarUploading(true);
     setError('');
     try {
-      const { url } = await api.uploadImage(b64, 'profiles', token);
-      const updated = await api.updateMe({ avatarUrl: url }, token);
+      // Store base64 directly in DB — avoids ephemeral filesystem on Render
+      const updated = await api.updateMe({ avatarUrl: b64 }, token);
       setUser(updated);
     } catch (err: any) {
       setError(err.message ?? 'Failed to update profile photo');
@@ -137,7 +141,7 @@ export default function CustomerSettingsPage() {
 
       <div className="px-4 py-5 space-y-5 max-w-lg mx-auto">
         {/* ── Wallet ──────────────────────────────────────────── */}
-        <div className="bg-gradient-to-br from-orange-500/20 to-orange-500/5 border border-orange-500/20 rounded-2xl p-5">
+        <div className="rounded-2xl p-5" style={{ background: 'linear-gradient(135deg, rgba(14,123,196,0.18) 0%, rgba(6,196,168,0.08) 100%)', border: '1px solid rgba(14,123,196,0.25)' }}>
           <p className="text-white/50 text-xs uppercase tracking-widest mb-1">Wallet balance</p>
           <div className="flex items-center justify-between">
             <div>
@@ -147,7 +151,8 @@ export default function CustomerSettingsPage() {
               <p className="text-white/40 text-xs mt-1">Lifetime top-ups: {fmt(wallet?.lifetimeTopupNgn ?? 0)}</p>
             </div>
             <button onClick={() => setShowFund(true)}
-              className="bg-orange-500 hover:bg-orange-400 text-white font-semibold px-4 py-2.5 rounded-xl text-sm transition-all active:scale-95">
+              className="text-white font-semibold px-4 py-2.5 rounded-xl text-sm transition-all active:scale-95"
+              style={{ background: 'linear-gradient(135deg, #0E7BC4, #06C4A8)' }}>
               + Fund Wallet
             </button>
           </div>
