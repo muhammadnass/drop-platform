@@ -126,6 +126,8 @@ model User {
   initiatedCalls        Call[]            @relation("CallerCalls")
   receivedCalls         Call[]            @relation("ReceiverCalls")
   founderAccount        FounderAccount?
+  resetToken            String?   @unique
+  resetTokenExpiry      DateTime?
 
   @@index([email])
   @@index([role])

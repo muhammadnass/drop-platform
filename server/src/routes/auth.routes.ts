@@ -10,7 +10,8 @@ import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { randomUUID } from 'crypto';
+import { randomUUID, randomBytes } from 'crypto';
+import { sendPasswordResetEmail } from '../services/email.service';
 import { PrismaClient } from '@prisma/client';
 import { authMiddleware, AuthRequest } from '../middleware/auth.middleware';
 
@@ -276,6 +277,79 @@ router.delete('/me', authMiddleware, async (req: AuthRequest, res: Response) => 
   } catch (err) {
     console.error('[auth/me DELETE] error:', err);
     return res.status(500).json({ success: false, error: 'Failed to delete account. Please try again.' });
+  }
+});
+
+// ── POST /api/auth/forgot-password ───────────────────────────
+router.post('/forgot-password', async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    if (!email || typeof email !== 'string') {
+      return res.status(400).json({ success: false, error: 'Email is required' });
+    }
+
+    const user = await prisma.user.findUnique({ where: { email: email.toLowerCase().trim() } });
+
+    // Always respond OK — never reveal whether an email exists
+    if (!user || !user.isActive) {
+      return res.json({ success: true, message: 'If that email is registered, a reset link has been sent.' });
+    }
+
+    const token = randomBytes(32).toString('hex');
+    const expiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { resetToken: token, resetTokenExpiry: expiry },
+    });
+
+    await sendPasswordResetEmail(user.email, user.name, token);
+
+    return res.json({ success: true, message: 'If that email is registered, a reset link has been sent.' });
+  } catch (err) {
+    console.error('[auth/forgot-password] error:', err);
+    // Still return OK to avoid leaking info
+    return res.json({ success: true, message: 'If that email is registered, a reset link has been sent.' });
+  }
+});
+
+// ── POST /api/auth/reset-password ────────────────────────────
+const ResetPasswordSchema = z.object({
+  token:    z.string().min(1),
+  password: z.string().min(8),
+});
+
+router.post('/reset-password', async (req: Request, res: Response) => {
+  try {
+    const result = ResetPasswordSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ success: false, error: result.error.flatten() });
+    }
+
+    const { token, password } = result.data;
+
+    const user = await prisma.user.findUnique({ where: { resetToken: token } });
+
+    if (!user || !user.resetTokenExpiry || user.resetTokenExpiry < new Date()) {
+      return res.status(400).json({ success: false, error: 'Reset link is invalid or has expired. Please request a new one.' });
+    }
+
+    const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+
+    await prisma.$transaction(async (tx) => {
+      // Invalidate all existing sessions
+      await tx.session.deleteMany({ where: { userId: user.id } });
+      // Update password and clear reset token
+      await tx.user.update({
+        where: { id: user.id },
+        data: { passwordHash, resetToken: null, resetTokenExpiry: null },
+      });
+    });
+
+    return res.json({ success: true, message: 'Password updated successfully. You can now log in.' });
+  } catch (err) {
+    console.error('[auth/reset-password] error:', err);
+    return res.status(500).json({ success: false, error: 'Failed to reset password. Please try again.' });
   }
 });
 

@@ -98,6 +98,13 @@ function LoginPageInner() {
             </div>
           </div>
 
+          {/* Forgot password */}
+          <div className="text-right -mt-1">
+            <Link href="/auth/forgot-password" className="text-xs hover:underline" style={{ color: '#06C4A8' }}>
+              Forgot password?
+            </Link>
+          </div>
+
           {/* Error */}
           {error && (
             <div className="flex items-center gap-2 text-red-400 text-sm bg-red-400/10 rounded-xl px-3 py-2.5">
