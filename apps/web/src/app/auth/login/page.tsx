@@ -41,7 +41,7 @@ function LoginPageInner() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4" style={{ background: 'linear-gradient(135deg, #0A1628 0%, #0D2040 60%, #0A2A3A 100%)' }}>
+    <div className="min-h-screen flex flex-col items-center justify-center px-4" style={{ background: 'linear-gradient(135deg, #0D0808 0%, #1A0E0E 60%, #0D0808 100%)' }}>
 
       {/* Logo */}
       <div className="mb-10 flex flex-col items-center gap-3">
@@ -71,7 +71,7 @@ function LoginPageInner() {
               placeholder="you@example.com"
               required
               autoComplete="email"
-              className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/10 text-white placeholder-white/30 text-sm outline-none focus:border-[#0E7BC4] transition-colors"
+              className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/10 text-white placeholder-white/30 text-sm outline-none focus:border-[#FF6500] transition-colors"
             />
           </div>
 
@@ -86,7 +86,7 @@ function LoginPageInner() {
                 placeholder="••••••••"
                 required
                 autoComplete="current-password"
-                className="w-full px-4 py-3 pr-11 rounded-xl bg-white/10 border border-white/10 text-white placeholder-white/30 text-sm outline-none focus:border-[#0E7BC4] transition-colors"
+                className="w-full px-4 py-3 pr-11 rounded-xl bg-white/10 border border-white/10 text-white placeholder-white/30 text-sm outline-none focus:border-[#FF6500] transition-colors"
               />
               <button
                 type="button"
@@ -100,7 +100,7 @@ function LoginPageInner() {
 
           {/* Forgot password */}
           <div className="text-right -mt-1">
-            <Link href="/auth/forgot-password" className="text-xs hover:underline" style={{ color: '#06C4A8' }}>
+            <Link href="/auth/forgot-password" className="text-xs hover:underline" style={{ color: '#D4186C' }}>
               Forgot password?
             </Link>
           </div>
@@ -118,7 +118,7 @@ function LoginPageInner() {
             type="submit"
             disabled={isLoading}
             className="w-full py-3.5 rounded-xl text-white font-bold text-base flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95 transition-all mt-2"
-            style={{ background: 'linear-gradient(135deg, #0E7BC4, #06C4A8)', boxShadow: '0 4px 20px rgba(14,123,196,0.40)' }}
+            style={{ background: 'linear-gradient(135deg, #FF6500, #D4186C)', boxShadow: '0 4px 20px rgba(255,101,0,0.40)' }}
           >
             {isLoading ? <Loader2 size={20} className="animate-spin" /> : 'Sign in'}
           </button>
@@ -133,7 +133,7 @@ function LoginPageInner() {
 
         <p className="text-center text-white/40 text-sm">
           New customer?{' '}
-          <Link href="/auth/register" className="font-semibold hover:underline" style={{ color: '#06C4A8' }}>
+          <Link href="/auth/register" className="font-semibold hover:underline" style={{ color: '#D4186C' }}>
             Create account
           </Link>
         </p>

@@ -6,12 +6,16 @@
   :root {
     --safe-area-top: env(safe-area-inset-top, 0px);
     --safe-area-bottom: env(safe-area-inset-bottom, 0px);
-    /* Velto brand tokens as CSS variables for hardcoded overrides */
-    --velto-primary:  #0E7BC4;
-    --velto-teal:     #06C4A8;
-    --velto-dark:     #0A1628;
-    --velto-light:    #F0F8FF;
-    --velto-shadow:   rgba(14, 123, 196, 0.35);
+    /* Velto brand tokens */
+    --velto-orange:   #FF6500;
+    --velto-pink:     #D4186C;
+    --velto-gradient: linear-gradient(135deg, #FF6500 0%, #D4186C 100%);
+    --velto-dark:     #0D0808;
+    --velto-card:     #1A0E0E;
+    --velto-surface:  #261515;
+    --velto-border:   rgba(255, 101, 0, 0.18);
+    --velto-shadow:   rgba(255, 101, 0, 0.30);
+    --velto-muted:    rgba(255, 255, 255, 0.55);
   }
   * { box-sizing: border-box; }
   html, body {
@@ -19,10 +23,17 @@
     max-width: 100vw;
     overflow-x: hidden;
   }
-  body { @apply bg-drop-cream text-drop-ink; }
+  body { background: #0D0808; color: #fff; }
 }
 
 @layer utilities {
   .pt-safe { padding-top: var(--safe-area-top); }
   .pb-safe { padding-bottom: var(--safe-area-bottom); }
+  .velto-gradient { background: var(--velto-gradient); }
+  .velto-text-gradient {
+    background: var(--velto-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
 }

@@ -42,7 +42,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: 'cover',
-  themeColor: '#0A1628',
+  themeColor: '#FF6500',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -54,12 +54,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           position="top-center"
           toastOptions={{
             style: {
-              background: '#0A1628',
+              background: '#1A0E0E',
               color: '#fff',
-              border: '1px solid rgba(255,255,255,0.1)',
+              border: '1px solid rgba(255,101,0,0.2)',
               borderRadius: '12px',
             },
-            success: { iconTheme: { primary: '#0E7BC4', secondary: '#fff' } },
+            success: { iconTheme: { primary: '#FF6500', secondary: '#fff' } },
           }}
         />
       </body>
