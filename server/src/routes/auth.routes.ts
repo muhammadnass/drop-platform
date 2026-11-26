@@ -335,7 +335,19 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
       data: { resetToken: token, resetTokenExpiry: expiry },
     });
 
-    await sendPasswordResetEmail(user.email, user.name, token);
+    // Fire-and-forget: the actual SMTP send is NOT awaited here. Some hosts
+    // (Render's free tier included) can silently stall an outbound SMTP
+    // connection rather than refusing it, and nodemailer previously had no
+    // timeout configured — so awaiting this directly in the request handler
+    // meant a slow/broken mail provider hung the whole HTTP response, and
+    // the customer just saw a generic "network error" with no email ever
+    // sent or any clear failure logged. The mail service now also has its
+    // own timeouts (see email.service.ts) as defense in depth, but the
+    // request itself should never depend on SMTP being reachable at all —
+    // the user-facing response only depends on the DB write above.
+    sendPasswordResetEmail(user.email, user.name, token).catch((err) => {
+      console.error('[auth/forgot-password] failed to send reset email:', err);
+    });
 
     return res.json({ success: true, message: 'If that email is registered, a reset link has been sent.' });
   } catch (err) {

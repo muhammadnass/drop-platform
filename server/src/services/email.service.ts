@@ -14,6 +14,18 @@
 
 import nodemailer from 'nodemailer';
 
+// Explicit timeouts are essential here: several cloud hosts (Render's free
+// tier included) can silently stall outbound SMTP connections rather than
+// refusing them outright. Without these, a stalled connection/greeting/send
+// would hang nodemailer's promise forever, and since sendPasswordResetEmail
+// used to be awaited directly in the request handler, that hang propagated
+// all the way up into a request that never responds (the client just sees
+// a generic "network error" after its own fetch timeout, with no way to
+// tell this apart from a real connectivity problem).
+const CONNECTION_TIMEOUT_MS = 10_000;
+const GREETING_TIMEOUT_MS   = 10_000;
+const SOCKET_TIMEOUT_MS     = 15_000;
+
 const transporter = nodemailer.createTransport({
   host:   process.env.SMTP_HOST   ?? 'smtp.gmail.com',
   port:   parseInt(process.env.SMTP_PORT ?? '465'),
@@ -22,6 +34,9 @@ const transporter = nodemailer.createTransport({
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
+  connectionTimeout: CONNECTION_TIMEOUT_MS,
+  greetingTimeout:   GREETING_TIMEOUT_MS,
+  socketTimeout:     SOCKET_TIMEOUT_MS,
 });
 
 const FROM = process.env.SMTP_FROM ?? 'Velto <noreply@veltomobility.com>';
