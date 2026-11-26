@@ -2,13 +2,18 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { io, Socket } from 'socket.io-client';
 import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/lib/api';
+import { useVoiceCall } from '@/hooks/useVoiceCall';
+import { CallModal } from '@/components/shared/CallModal';
 import {
   MapPin, Clock, Star, LogOut, Wallet,
   Package, Phone, MessageSquare, Navigation,
   ChevronRight, XCircle, AlertTriangle, User,
 } from 'lucide-react';
+
+const SERVER_BASE = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:4000';
 
 interface PendingOrder {
   id: string;
@@ -114,7 +119,7 @@ function VoiceRecorder({ onSend }: { onSend: (blob: Blob, dur: number) => void }
 // are fully wired to the real backend. "Call" is NOT a real audio call —
 // there is no WebRTC/audio implementation anywhere in this codebase yet;
 // it only logs a call record via /calls so the UI has something to show.
-function RiderChatPanel({ delivery, token, onBack }: { delivery: any; token: string; onBack: () => void }) {
+function RiderChatPanel({ delivery, token, onBack, onCall }: { delivery: any; token: string; onBack: () => void; onCall: () => void }) {
   const [messages, setMessages] = useState<any[]>(delivery.messages ?? []);
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
@@ -139,9 +144,9 @@ function RiderChatPanel({ delivery, token, onBack }: { delivery: any; token: str
     } catch { }
   };
 
-  const callCustomer = async () => {
-    try { await api.initiateCall(delivery.id, delivery.customerId, token); } catch { }
-    alert('Calling customer… (in-app voice calling isn’t built yet — this only logs the call attempt)');
+  const callCustomer = () => {
+    api.initiateCall(delivery.id, delivery.customerId, token).catch(() => {}); // best-effort call log
+    onCall();
   };
 
   return (
@@ -246,6 +251,8 @@ export default function RiderDashboard() {
   const [activeDelivery, setActiveDelivery] = useState<any>(null);
   const [showCancel, setShowCancel]         = useState(false);
   const [showChat, setShowChat]             = useState(false);
+  const [socket, setSocket] = useState<Socket | null>(null);
+  const call = useVoiceCall(socket, activeDelivery?.id);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   // Orders this rider has declined or let time out — the backend's decline
   // endpoint doesn't persist anything, so without this client-side memory the
@@ -278,6 +285,17 @@ export default function RiderDashboard() {
     pollRef.current = setInterval(poll, 8000);
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, [isOnline, token, activeDelivery, pendingOrder]);
+
+  // Socket.io connection for the active delivery — joins the same
+  // `delivery:{id}` room the customer is in, used here purely for WebRTC
+  // call signaling (offer/answer/ICE relay; see useVoiceCall).
+  useEffect(() => {
+    if (!activeDelivery || !token) { setSocket(null); return; }
+    const s = io(SERVER_BASE, { auth: { token } });
+    setSocket(s);
+    s.on('connect', () => s.emit('delivery:join', activeDelivery.id));
+    return () => { s.emit('delivery:leave', activeDelivery.id); s.disconnect(); setSocket(null); };
+  }, [activeDelivery?.id, token]);
 
   // Broadcast this rider's live GPS position while a delivery is active, so
   // the customer's map can track them in real time. Previously nothing on
@@ -396,7 +414,7 @@ export default function RiderDashboard() {
               <Navigation size={15} /> Open in Google Maps (to pickup)
             </button>
             <div className="flex gap-2">
-              <button onClick={() => setShowChat(true)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-blue-500/20 text-blue-400 text-sm font-semibold"><Phone size={15} /> Call</button>
+              <button onClick={call.startCall} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-blue-500/20 text-blue-400 text-sm font-semibold"><Phone size={15} /> Call</button>
               <button onClick={() => setShowChat(true)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-white/10 text-white/70 text-sm font-semibold"><MessageSquare size={15} /> Chat</button>
               <button onClick={() => setShowCancel(true)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-red-500/20 text-red-400 text-sm font-semibold"><XCircle size={15} /> Cancel</button>
             </div>
@@ -438,8 +456,21 @@ export default function RiderDashboard() {
       {pendingOrder && <AcceptSheet order={pendingOrder} timeout={30} onAccept={handleAccept} onDecline={handleDecline} />}
       {showCancel && <CancelSheet onConfirm={handleCancel} onClose={() => setShowCancel(false)} />}
       {showChat && activeDelivery && token && (
-        <RiderChatPanel delivery={activeDelivery} token={token} onBack={() => setShowChat(false)} />
+        <RiderChatPanel delivery={activeDelivery} token={token} onBack={() => setShowChat(false)} onCall={call.startCall} />
       )}
+
+      <CallModal
+        status={call.status}
+        peerName={activeDelivery?.customer?.name ?? 'Customer'}
+        duration={call.duration}
+        muted={call.muted}
+        error={call.error}
+        onAccept={call.acceptCall}
+        onReject={call.rejectCall}
+        onEnd={call.endCall}
+        onToggleMute={call.toggleMute}
+        remoteAudioRef={call.remoteAudioRef}
+      />
     </div>
   );
 }

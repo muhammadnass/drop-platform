@@ -9,6 +9,8 @@ import { io, Socket } from 'socket.io-client';
 import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/lib/api';
 import { fileToResizedBase64 } from '@/lib/image';
+import { useVoiceCall } from '@/hooks/useVoiceCall';
+import { CallModal } from '@/components/shared/CallModal';
 
 const SERVER_BASE = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:4000';
 // Map rendering, address search and geocoding all run on Google Maps now
@@ -366,8 +368,9 @@ function ActivePanel({ delivery: initialDelivery, token, onBack, onCompleted }: 
   const [riderPos, setRiderPos] = useState<[number, number] | null>(
     rp?.lastLatitude && rp?.lastLongitude ? [rp.lastLongitude, rp.lastLatitude] : null
   );
-  const socketRef = useRef<Socket | null>(null);
+  const [socket, setSocket] = useState<Socket | null>(null);
   const deliveryId = initialDelivery.id;
+  const call = useVoiceCall(socket, deliveryId);
 
   const refreshDelivery = useCallback(async () => {
     try {
@@ -378,18 +381,18 @@ function ActivePanel({ delivery: initialDelivery, token, onBack, onCompleted }: 
   }, [token, deliveryId, onCompleted]);
 
   useEffect(() => {
-    const socket = io(SERVER_BASE, { auth: { token } });
-    socketRef.current = socket;
-    socket.on('connect', () => socket.emit('delivery:join', deliveryId));
-    socket.on('rider:location', (data: { lat: number; lng: number }) => {
+    const s = io(SERVER_BASE, { auth: { token } });
+    setSocket(s);
+    s.on('connect', () => s.emit('delivery:join', deliveryId));
+    s.on('rider:location', (data: { lat: number; lng: number }) => {
       setRiderPos([data.lng, data.lat]);
     });
-    socket.on('delivery:accepted', refreshDelivery);
-    socket.on('delivery:status', (data: { status: string }) => {
+    s.on('delivery:accepted', refreshDelivery);
+    s.on('delivery:status', (data: { status: string }) => {
       if (data.status === 'DELIVERED' || data.status === 'CANCELLED') onCompleted();
       else refreshDelivery();
     });
-    return () => { socket.emit('delivery:leave', deliveryId); socket.disconnect(); };
+    return () => { s.emit('delivery:leave', deliveryId); s.disconnect(); setSocket(null); };
   }, [deliveryId, token, refreshDelivery, onCompleted]);
 
   useEffect(() => {
@@ -448,7 +451,7 @@ function ActivePanel({ delivery: initialDelivery, token, onBack, onCompleted }: 
           {canCancel && (
             <button onClick={() => setShowCancel(true)} className="bg-red-500/20 text-red-400 px-3 py-1.5 rounded-full text-xs font-medium">Cancel</button>
           )}
-          {rider && <button onClick={() => alert('Calling rider… (WebRTC pending)')} className="bg-green-600 text-white px-3 py-1.5 rounded-full text-xs font-medium">📞 Call</button>}
+          {rider && <button onClick={call.startCall} className="bg-green-600 text-white px-3 py-1.5 rounded-full text-xs font-medium">📞 Call</button>}
         </div>
       </div>
 
@@ -527,6 +530,19 @@ function ActivePanel({ delivery: initialDelivery, token, onBack, onCompleted }: 
           {busy ? '…' : '→'}
         </button>
       </div>
+
+      <CallModal
+        status={call.status}
+        peerName={rider?.name ?? 'Rider'}
+        duration={call.duration}
+        muted={call.muted}
+        error={call.error}
+        onAccept={call.acceptCall}
+        onReject={call.rejectCall}
+        onEnd={call.endCall}
+        onToggleMute={call.toggleMute}
+        remoteAudioRef={call.remoteAudioRef}
+      />
     </motion.div>
   );
 }

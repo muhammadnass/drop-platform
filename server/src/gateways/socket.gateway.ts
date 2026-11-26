@@ -33,6 +33,15 @@ export const SOCKET_EVENTS = {
   ORDER_ACCEPTED:        'order:accepted',
   ORDER_CANCELLED:       'order:cancelled',
   SYSTEM_MESSAGE:        'system:message',
+
+  // WebRTC call signaling — relayed verbatim between the two sockets in a
+  // delivery room (see relayToDeliveryRoom below). The server never
+  // inspects SDP/ICE payloads, it's just a signaling relay.
+  CALL_OFFER:            'call:offer',
+  CALL_ANSWER:           'call:answer',
+  CALL_ICE_CANDIDATE:    'call:ice-candidate',
+  CALL_END:              'call:end',
+  CALL_REJECT:           'call:reject',
 } as const;
 
 interface TokenPayload {
@@ -190,6 +199,20 @@ export function registerSocketGateway(io: Server): void {
     socket.on(SOCKET_EVENTS.LEAVE_DELIVERY_ROOM, (deliveryId: string) => {
       socket.leave(`delivery:${deliveryId}`);
     });
+
+    // ── WebRTC Call Signaling ─────────────────────────────────
+    // Pure relay: forward the payload to everyone else in the delivery
+    // room (normally exactly one other party, customer<->rider) without
+    // ever looking at it. `socket.to(room)` already excludes the sender.
+    const relayToDeliveryRoom = (event: string) => (data: { deliveryId?: string }) => {
+      if (!data?.deliveryId) return;
+      socket.to(`delivery:${data.deliveryId}`).emit(event, data);
+    };
+    socket.on(SOCKET_EVENTS.CALL_OFFER,         relayToDeliveryRoom(SOCKET_EVENTS.CALL_OFFER));
+    socket.on(SOCKET_EVENTS.CALL_ANSWER,        relayToDeliveryRoom(SOCKET_EVENTS.CALL_ANSWER));
+    socket.on(SOCKET_EVENTS.CALL_ICE_CANDIDATE, relayToDeliveryRoom(SOCKET_EVENTS.CALL_ICE_CANDIDATE));
+    socket.on(SOCKET_EVENTS.CALL_END,           relayToDeliveryRoom(SOCKET_EVENTS.CALL_END));
+    socket.on(SOCKET_EVENTS.CALL_REJECT,        relayToDeliveryRoom(SOCKET_EVENTS.CALL_REJECT));
 
     // ── Rider: Accept Delivery ───────────────────────────────
     socket.on(
