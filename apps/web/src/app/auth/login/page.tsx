@@ -46,7 +46,7 @@ function LoginPageInner() {
       {/* Logo */}
       <div className="mb-10 flex flex-col items-center gap-3">
         <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-lg">
-          <img src="/icons/logo.svg" alt="Velto" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/icons/logo.png'; }} />
+          <img src="/icons/icon-192.png" alt="Velto" className="w-full h-full object-cover" />
         </div>
         <h1 className="text-white text-3xl font-bold tracking-tight" style={{ fontFamily: 'var(--font-syne, sans-serif)' }}>
           Velto

@@ -157,7 +157,7 @@ function Loader() {
 function DropLogo() {
   return (
     <div className="w-8 h-8 rounded-lg overflow-hidden">
-      <img src="/icons/logo.svg" alt="Velto" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/icons/logo.png'; }} />
+      <img src="/icons/icon-192.png" alt="Velto" className="w-full h-full object-cover" />
     </div>
   );
 }

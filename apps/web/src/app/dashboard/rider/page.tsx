@@ -360,9 +360,9 @@ export default function RiderDashboard() {
       <header className="border-b border-white/10 px-6 pb-4 flex items-center justify-between" style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg overflow-hidden">
-            <img src="/icons/logo.png" alt="Drop" className="w-full h-full object-cover" />
+            <img src="/icons/icon-192.png" alt="Velto" className="w-full h-full object-cover" />
           </div>
-          <span className="font-bold" style={{ fontFamily: 'var(--font-syne)' }}>Drop</span>
+          <span className="font-bold" style={{ fontFamily: 'var(--font-syne)' }}>Velto</span>
           <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${isOnline ? 'bg-green-500/20 text-green-400' : 'bg-white/10 text-white/40'}`}>
             {isOnline ? '● Online' : '○ Offline'}
           </span>

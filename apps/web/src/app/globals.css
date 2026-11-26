@@ -16,6 +16,34 @@
     --velto-border:   rgba(255, 101, 0, 0.18);
     --velto-shadow:   rgba(255, 101, 0, 0.30);
     --velto-muted:    rgba(255, 255, 255, 0.55);
+
+    /* Generic dark/light-aware tokens used across the customer dashboard,
+       settings and history screens. These exist so a toggle on `data-theme`
+       (see ThemeContext) actually repaints the app, instead of only
+       flipping an attribute that nothing reads. Dark values here match the
+       hardcoded colors the UI originally shipped with, so dark mode is
+       pixel-identical to before; light mode is the new counterpart. */
+    --page-bg: #0f0f0f;
+    --card1:   #1a1a1a; /* primary card/panel surface */
+    --card2:   #2a2a2a; /* secondary surface (chat bubbles, inputs) */
+
+    --t-100: #ffffff;
+    --t-90:  rgba(255,255,255,0.90);
+    --t-80:  rgba(255,255,255,0.80);
+    --t-70:  rgba(255,255,255,0.70);
+    --t-60:  rgba(255,255,255,0.60);
+    --t-50:  rgba(255,255,255,0.50);
+    --t-40:  rgba(255,255,255,0.40);
+    --t-30:  rgba(255,255,255,0.30);
+
+    --b-5:  rgba(255,255,255,0.05);
+    --b-10: rgba(255,255,255,0.10);
+    --b-20: rgba(255,255,255,0.20);
+    --b-25: rgba(255,255,255,0.25);
+
+    --s-5:  rgba(255,255,255,0.05);
+    --s-10: rgba(255,255,255,0.10);
+    --s-20: rgba(255,255,255,0.20);
   }
   /* ── Light mode overrides ── */
   [data-theme="light"] {
@@ -25,6 +53,28 @@
     --velto-border:  rgba(255, 101, 0, 0.20);
     --velto-shadow:  rgba(255, 101, 0, 0.18);
     --velto-muted:   rgba(0, 0, 0, 0.50);
+
+    --page-bg: #F5F2EF;
+    --card1:   #FFFFFF;
+    --card2:   #F0ECE8;
+
+    --t-100: #17120F;
+    --t-90:  rgba(23,18,15,0.90);
+    --t-80:  rgba(23,18,15,0.80);
+    --t-70:  rgba(23,18,15,0.70);
+    --t-60:  rgba(23,18,15,0.60);
+    --t-50:  rgba(23,18,15,0.50);
+    --t-40:  rgba(23,18,15,0.40);
+    --t-30:  rgba(23,18,15,0.30);
+
+    --b-5:  rgba(23,18,15,0.06);
+    --b-10: rgba(23,18,15,0.10);
+    --b-20: rgba(23,18,15,0.16);
+    --b-25: rgba(23,18,15,0.20);
+
+    --s-5:  rgba(23,18,15,0.04);
+    --s-10: rgba(23,18,15,0.06);
+    --s-20: rgba(23,18,15,0.10);
   }
 
   * { box-sizing: border-box; }

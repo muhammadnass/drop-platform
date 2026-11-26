@@ -256,13 +256,13 @@ function AutocompleteInput({ value, onChange, onSelect, placeholder, dotColor = 
         placeholder={resolving ? 'Resolving address…' : placeholder}
         disabled={resolving}
         autoFocus={autoFocus}
-        className="w-full bg-[#2a2a2a] text-white pl-8 pr-3 py-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-orange-500/50 placeholder-white/30 disabled:opacity-60"
+        className="w-full bg-[var(--card2)] text-[var(--t-100)] pl-8 pr-3 py-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-orange-500/50 placeholder-white/30 disabled:opacity-60"
       />
       {open && (
-        <ul className="absolute z-50 top-full left-0 right-0 mt-1 bg-[#1e1e1e] border border-white/10 rounded-xl overflow-hidden shadow-xl">
+        <ul className="absolute z-50 top-full left-0 right-0 mt-1 bg-[var(--card1)] border border-[var(--b-10)] rounded-xl overflow-hidden shadow-xl">
           {suggestions.map((f, i) => (
             <li key={i} onMouseDown={() => pick(f)}
-              className="px-4 py-3 text-sm text-white/80 hover:bg-orange-500/20 hover:text-white cursor-pointer border-b border-white/5 last:border-0 truncate">
+              className="px-4 py-3 text-sm text-[var(--t-80)] hover:bg-orange-500/20 hover:text-[var(--t-100)] cursor-pointer border-b border-[var(--b-5)] last:border-0 truncate">
               📍 {f.place_name}
             </li>
           ))}
@@ -279,7 +279,7 @@ const GoogleMapView = dynamic(() => import('@/components/GoogleMapView'), {
     <div className="w-full h-full bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] flex items-center justify-center">
       <div className="text-center opacity-40">
         <div className="text-5xl mb-2">🗺</div>
-        <p className="text-xs text-white/60">Loading map…</p>
+        <p className="text-xs text-[var(--t-60)]">Loading map…</p>
       </div>
     </div>
   )
@@ -310,8 +310,8 @@ function VoiceRecorder({ onSend }: { onSend: (blob: Blob, dur: number) => void }
   const stop = () => { mr.current?.stop(); if (t.current) clearInterval(t.current); setRec(false); };
 
   return rec
-    ? <button onClick={stop} className="flex items-center gap-2 bg-red-500 text-white px-3 py-1.5 rounded-full text-xs animate-pulse">🔴 {elapsed}s — tap to send</button>
-    : <button onClick={start} className="p-2 text-white/50 hover:text-white text-lg" title="Voice note">🎙</button>;
+    ? <button onClick={stop} className="flex items-center gap-2 bg-red-500 text-[var(--t-100)] px-3 py-1.5 rounded-full text-xs animate-pulse">🔴 {elapsed}s — tap to send</button>
+    : <button onClick={start} className="p-2 text-[var(--t-50)] hover:text-[var(--t-100)] text-lg" title="Voice note">🎙</button>;
 }
 
 // ── Active Delivery Panel ─────────────────────────────────────
@@ -324,13 +324,13 @@ function CustomerCancelSheet({ token, onConfirm, onClose }: { token: string; onC
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[1200] flex items-end justify-center p-4">
-      <div className="w-full max-w-sm bg-[#1a1a1a] border border-white/10 rounded-3xl p-6">
+      <div className="w-full max-w-sm bg-[var(--card1)] border border-[var(--b-10)] rounded-3xl p-6">
         <h3 className="font-bold text-lg mb-1">Cancel Delivery</h3>
-        <p className="text-white/40 text-sm mb-4">Select a reason for cancelling</p>
+        <p className="text-[var(--t-40)] text-sm mb-4">Select a reason for cancelling</p>
         <div className="space-y-2 max-h-52 overflow-y-auto mb-4 pr-1">
           {(reasons.length ? reasons : [{ code: 'CHANGED_MIND', label: 'Changed my mind' }, { code: 'WRONG_ADDRESS', label: 'Entered wrong address' }, { code: 'TOO_SLOW', label: 'Taking too long' }, { code: 'OTHER', label: 'Other' }]).map((r: any) => (
             <button key={r.code} onClick={() => setSelected(r.code)}
-              className={`w-full text-left px-3 py-2.5 rounded-xl text-sm border transition-colors ${selected === r.code ? 'border-orange-500 bg-orange-500/10 text-white' : 'border-white/10 bg-white/5 text-white/60 hover:border-white/20'}`}>
+              className={`w-full text-left px-3 py-2.5 rounded-xl text-sm border transition-colors ${selected === r.code ? 'border-orange-500 bg-orange-500/10 text-[var(--t-100)]' : 'border-[var(--b-10)] bg-[var(--s-5)] text-[var(--t-60)] hover:border-[var(--b-20)]'}`}>
               {r.label}
             </button>
           ))}
@@ -338,12 +338,12 @@ function CustomerCancelSheet({ token, onConfirm, onClose }: { token: string; onC
         {selected && (
           <textarea value={note} onChange={(e) => setNote(e.target.value)}
             placeholder="Add details (optional)" rows={2}
-            className="w-full px-3 py-2.5 rounded-xl bg-white/10 border border-white/10 text-white text-sm placeholder-white/30 outline-none focus:border-orange-500 resize-none mb-4" />
+            className="w-full px-3 py-2.5 rounded-xl bg-[var(--s-10)] border border-[var(--b-10)] text-[var(--t-100)] text-sm placeholder-white/30 outline-none focus:border-orange-500 resize-none mb-4" />
         )}
         <div className="flex gap-3">
-          <button onClick={onClose} className="flex-1 py-3 rounded-xl border border-white/20 text-white/60 font-semibold">Keep Delivery</button>
+          <button onClick={onClose} className="flex-1 py-3 rounded-xl border border-[var(--b-20)] text-[var(--t-60)] font-semibold">Keep Delivery</button>
           <button onClick={() => selected && onConfirm(selected, note)} disabled={!selected}
-            className="flex-grow py-3 rounded-xl bg-red-500 text-white font-bold disabled:opacity-40">Confirm Cancel</button>
+            className="flex-grow py-3 rounded-xl bg-red-500 text-[var(--t-100)] font-bold disabled:opacity-40">Confirm Cancel</button>
         </div>
       </div>
     </div>
@@ -440,18 +440,18 @@ function ActivePanel({ delivery: initialDelivery, token, onBack, onCompleted }: 
 
   return (
     <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 24, stiffness: 260 }}
-      className="fixed inset-0 z-[1100] bg-[#0f0f0f] flex flex-col">
-      <div className="bg-[#1a1a1a] px-4 pb-3 flex items-center gap-3" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}>
-        <button onClick={onBack} className="text-white/60 hover:text-white text-xl">←</button>
+      className="fixed inset-0 z-[1100] bg-[var(--page-bg)] flex flex-col">
+      <div className="bg-[var(--card1)] px-4 pb-3 flex items-center gap-3" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}>
+        <button onClick={onBack} className="text-[var(--t-60)] hover:text-[var(--t-100)] text-xl">←</button>
         <div className="flex-1">
-          <p className="text-white font-semibold text-sm">Active Delivery</p>
-          <span className={`text-xs text-white px-2 py-0.5 rounded-full ${statusColors[delivery.status] ?? 'bg-gray-600'}`}>{delivery.status.replace(/_/g, ' ')}</span>
+          <p className="text-[var(--t-100)] font-semibold text-sm">Active Delivery</p>
+          <span className={`text-xs text-[var(--t-100)] px-2 py-0.5 rounded-full ${statusColors[delivery.status] ?? 'bg-gray-600'}`}>{delivery.status.replace(/_/g, ' ')}</span>
         </div>
         <div className="flex items-center gap-2">
           {canCancel && (
             <button onClick={() => setShowCancel(true)} className="bg-red-500/20 text-red-400 px-3 py-1.5 rounded-full text-xs font-medium">Cancel</button>
           )}
-          {rider && <button onClick={call.startCall} className="bg-green-600 text-white px-3 py-1.5 rounded-full text-xs font-medium">📞 Call</button>}
+          {rider && <button onClick={call.startCall} className="bg-green-600 text-[var(--t-100)] px-3 py-1.5 rounded-full text-xs font-medium">📞 Call</button>}
         </div>
       </div>
 
@@ -460,15 +460,15 @@ function ActivePanel({ delivery: initialDelivery, token, onBack, onCompleted }: 
       )}
 
       {rider && (
-        <div className="mx-4 mt-3 bg-[#1a1a1a] rounded-2xl p-4 flex items-center gap-4">
+        <div className="mx-4 mt-3 bg-[var(--card1)] rounded-2xl p-4 flex items-center gap-4">
           {rp?.profilePhotoUrl
             ? <img src={`${SERVER_BASE}${rp.profilePhotoUrl}`} className="w-14 h-14 rounded-full object-cover border-2 border-orange-500" alt="Rider" />
-            : <div className="w-14 h-14 rounded-full bg-orange-500 flex items-center justify-center text-white text-xl font-bold">{rider.name?.[0] ?? '?'}</div>}
+            : <div className="w-14 h-14 rounded-full bg-orange-500 flex items-center justify-center text-[var(--t-100)] text-xl font-bold">{rider.name?.[0] ?? '?'}</div>}
           <div className="flex-1">
-            <p className="text-white font-semibold">{rider.name}</p>
-            <p className="text-white/50 text-sm">{rp?.vehicleTier?.replace('DROP_', '')} · {rp?.vehiclePlate ?? '—'}</p>
+            <p className="text-[var(--t-100)] font-semibold">{rider.name}</p>
+            <p className="text-[var(--t-50)] text-sm">{rp?.vehicleTier?.replace('DROP_', '')} · {rp?.vehiclePlate ?? '—'}</p>
           </div>
-          {rp?.vehiclePlatePhotoUrl && <img src={`${SERVER_BASE}${rp.vehiclePlatePhotoUrl}`} className="w-16 h-10 rounded object-cover border border-white/20" alt="Plate" />}
+          {rp?.vehiclePlatePhotoUrl && <img src={`${SERVER_BASE}${rp.vehiclePlatePhotoUrl}`} className="w-16 h-10 rounded object-cover border border-[var(--b-20)]" alt="Plate" />}
         </div>
       )}
 
@@ -480,18 +480,18 @@ function ActivePanel({ delivery: initialDelivery, token, onBack, onCompleted }: 
           />
           {!riderPos && (
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-              <p className="text-white/60 text-xs">Waiting for rider's live location…</p>
+              <p className="text-[var(--t-60)] text-xs">Waiting for rider's live location…</p>
             </div>
           )}
         </div>
       )}
 
-      <div className="mx-4 mt-3 bg-[#1a1a1a] rounded-2xl p-4 space-y-2">
-        <div className="flex items-start gap-2"><span className="text-green-400 mt-0.5 text-xs">⬤</span><p className="text-white/80 text-sm flex-1">{delivery.pickupAddress}</p></div>
-        <div className="ml-1 border-l border-white/10 h-2" />
-        <div className="flex items-start gap-2"><span className="text-orange-400 mt-0.5 text-xs">⬤</span><p className="text-white/80 text-sm flex-1">{delivery.dropoffAddress}</p></div>
-        <div className="flex justify-between pt-1 border-t border-white/10">
-          <span className="text-white/40 text-xs">{delivery.distanceKm?.toFixed(1)} km</span>
+      <div className="mx-4 mt-3 bg-[var(--card1)] rounded-2xl p-4 space-y-2">
+        <div className="flex items-start gap-2"><span className="text-green-400 mt-0.5 text-xs">⬤</span><p className="text-[var(--t-80)] text-sm flex-1">{delivery.pickupAddress}</p></div>
+        <div className="ml-1 border-l border-[var(--b-10)] h-2" />
+        <div className="flex items-start gap-2"><span className="text-orange-400 mt-0.5 text-xs">⬤</span><p className="text-[var(--t-80)] text-sm flex-1">{delivery.dropoffAddress}</p></div>
+        <div className="flex justify-between pt-1 border-t border-[var(--b-10)]">
+          <span className="text-[var(--t-40)] text-xs">{delivery.distanceKm?.toFixed(1)} km</span>
           <span className="text-orange-400 font-bold text-sm">{fmt(delivery.totalFareNgn)}</span>
         </div>
       </div>
@@ -499,7 +499,7 @@ function ActivePanel({ delivery: initialDelivery, token, onBack, onCompleted }: 
       {delivery.photos?.length > 0 && (
         <div className="mx-4 mt-2 flex gap-2 overflow-x-auto pb-1">
           {delivery.photos.map((p: any, i: number) => (
-            <img key={i} src={p.url.startsWith('http') ? p.url : `${SERVER_BASE}${p.url}`} className="w-14 h-14 rounded-xl object-cover flex-shrink-0 border border-white/10" alt="" />
+            <img key={i} src={p.url.startsWith('http') ? p.url : `${SERVER_BASE}${p.url}`} className="w-14 h-14 rounded-xl object-cover flex-shrink-0 border border-[var(--b-10)]" alt="" />
           ))}
         </div>
       )}
@@ -510,11 +510,11 @@ function ActivePanel({ delivery: initialDelivery, token, onBack, onCompleted }: 
           return (
             <div key={i} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
               {m.type === 'VOICE_NOTE'
-                ? <div className={`px-3 py-2 rounded-2xl ${isMe ? 'bg-orange-500' : 'bg-[#2a2a2a]'}`}>
+                ? <div className={`px-3 py-2 rounded-2xl ${isMe ? 'bg-orange-500' : 'bg-[var(--card2)]'}`}>
                     <audio src={m.voiceNoteUrl?.startsWith('http') ? m.voiceNoteUrl : `${SERVER_BASE}${m.voiceNoteUrl}`} controls className="h-7 w-40" />
-                    {m.durationSecs && <p className="text-white/50 text-xs mt-0.5">{m.durationSecs}s</p>}
+                    {m.durationSecs && <p className="text-[var(--t-50)] text-xs mt-0.5">{m.durationSecs}s</p>}
                   </div>
-                : <div className={`px-3 py-2 rounded-2xl max-w-[72%] text-sm ${isMe ? 'bg-orange-500 text-white' : 'bg-[#2a2a2a] text-white/90'}`}>{m.content}</div>
+                : <div className={`px-3 py-2 rounded-2xl max-w-[72%] text-sm ${isMe ? 'bg-orange-500 text-[var(--t-100)]' : 'bg-[var(--card2)] text-[var(--t-90)]'}`}>{m.content}</div>
               }
             </div>
           );
@@ -522,11 +522,11 @@ function ActivePanel({ delivery: initialDelivery, token, onBack, onCompleted }: 
         <div ref={end} />
       </div>
 
-      <div className="p-4 bg-[#1a1a1a] flex items-center gap-2 border-t border-white/5">
+      <div className="p-4 bg-[var(--card1)] flex items-center gap-2 border-t border-[var(--b-5)]">
         <VoiceRecorder onSend={sendVoice} />
         <input value={text} onChange={e => setText(e.target.value)} onKeyDown={e => e.key === 'Enter' && send()}
-          placeholder="Message…" className="flex-1 bg-[#2a2a2a] text-white rounded-full px-4 py-2 text-sm outline-none placeholder-white/30" />
-        <button onClick={send} disabled={busy || !text.trim()} className="bg-orange-500 disabled:opacity-40 text-white p-2 rounded-full w-9 h-9 flex items-center justify-center">
+          placeholder="Message…" className="flex-1 bg-[var(--card2)] text-[var(--t-100)] rounded-full px-4 py-2 text-sm outline-none placeholder-white/30" />
+        <button onClick={send} disabled={busy || !text.trim()} className="bg-orange-500 disabled:opacity-40 text-[var(--t-100)] p-2 rounded-full w-9 h-9 flex items-center justify-center">
           {busy ? '…' : '→'}
         </button>
       </div>
@@ -750,7 +750,7 @@ export default function CustomerDashboard() {
   const spring = { type: 'spring' as const, damping: 22, stiffness: 220 };
 
   return (
-    <div className="min-h-screen bg-[#0f0f0f] text-white overflow-hidden">
+    <div className="min-h-screen bg-[var(--page-bg)] text-[var(--t-100)] overflow-hidden">
       <AnimatePresence>
         {step === 'active' && activeDelivery && (
           <ActivePanel
@@ -776,31 +776,31 @@ export default function CustomerDashboard() {
             </div>
           )}
           {pinMode && (
-            <div className="absolute inset-x-4 bottom-4 z-[950] bg-[#1a1a1a]/95 backdrop-blur border border-white/10 rounded-2xl p-4 space-y-2">
-              <p className="text-white/40 text-xs">Drag the map so the pin sits on your exact pickup spot</p>
-              <p className="text-white text-sm font-medium truncate">{pinResolving ? 'Resolving address…' : pinAddr}</p>
+            <div className="absolute inset-x-4 bottom-4 z-[950] bg-[var(--card1)]/95 backdrop-blur border border-[var(--b-10)] rounded-2xl p-4 space-y-2">
+              <p className="text-[var(--t-40)] text-xs">Drag the map so the pin sits on your exact pickup spot</p>
+              <p className="text-[var(--t-100)] text-sm font-medium truncate">{pinResolving ? 'Resolving address…' : pinAddr}</p>
               <div className="flex gap-2">
-                <button onClick={() => setPinMode(false)} className="flex-1 py-2.5 rounded-xl border border-white/20 text-white/60 font-semibold text-sm">Cancel</button>
+                <button onClick={() => setPinMode(false)} className="flex-1 py-2.5 rounded-xl border border-[var(--b-20)] text-[var(--t-60)] font-semibold text-sm">Cancel</button>
                 <button onClick={confirmPin} disabled={pinResolving || !pinCoords}
-                  className="flex-grow py-2.5 rounded-xl bg-orange-500 disabled:opacity-40 text-white font-bold text-sm">
+                  className="flex-grow py-2.5 rounded-xl bg-orange-500 disabled:opacity-40 text-[var(--t-100)] font-bold text-sm">
                   Confirm this location
                 </button>
               </div>
             </div>
           )}
-          <div className="absolute inset-x-0 bottom-0 h-52 bg-gradient-to-t from-[#0f0f0f] to-transparent pointer-events-none z-10" />
+          <div className="absolute inset-x-0 bottom-0 h-52 bg-gradient-to-t from-[var(--page-bg)] to-transparent pointer-events-none z-10" />
           <div className="absolute inset-x-4 flex items-center justify-between z-[1000]" style={{ top: 'max(1rem, env(safe-area-inset-top))' }}>
             {/* DROP badge → Delivery History (distinct from the ⚙ settings
                 button below, which goes to Account/Wallet — these used to
                 point at the same page, which was redundant). */}
             <button onClick={() => router.push('/dashboard/customer/history')}
               className="bg-orange-500 rounded-2xl pl-2 pr-4 py-2 shadow-lg flex items-center gap-2 active:scale-95 transition-all">
-              <img src="/icons/logo.svg" alt="Velto" className="w-6 h-6 rounded-lg object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/icons/logo.png'; }} />
-              <span className="font-bold text-white tracking-widest text-lg">VELTO</span>
+              <img src="/icons/icon-192.png" alt="Velto" className="w-6 h-6 rounded-lg object-cover" />
+              <span className="font-bold text-[var(--t-100)] tracking-widest text-lg">VELTO</span>
             </button>
             <div className="flex items-center gap-2">
               <div className="bg-black/60 backdrop-blur rounded-full px-4 py-2 flex items-center gap-2">
-                <span className="text-white/50 text-xs">Wallet</span>
+                <span className="text-[var(--t-50)] text-xs">Wallet</span>
                 <span className="text-orange-400 font-bold text-sm">{fmt(walletBal)}</span>
               </div>
               {/* Was a 36px circle — too small to reliably tap on a phone/iPad.
@@ -809,7 +809,7 @@ export default function CustomerDashboard() {
                   tappable control rather than a decorative icon. */}
               <button onClick={() => router.push('/dashboard/customer/settings')}
                 aria-label="Settings"
-                className="bg-black/60 backdrop-blur border border-white/10 rounded-full w-11 h-11 flex items-center justify-center text-white/70 hover:text-white hover:bg-black/80 active:scale-90 transition-all text-lg">
+                className="bg-black/60 backdrop-blur border border-[var(--b-10)] rounded-full w-11 h-11 flex items-center justify-center text-[var(--t-70)] hover:text-[var(--t-100)] hover:bg-black/80 active:scale-90 transition-all text-lg">
                 ⚙
               </button>
             </div>
@@ -819,9 +819,9 @@ export default function CustomerDashboard() {
         <AnimatePresence mode="wait">
           {step === 'map' && (
             <motion.div key="s-map" initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 80, opacity: 0 }} transition={spring}
-              className="bg-[#1a1a1a] rounded-t-3xl p-6 space-y-4 shadow-2xl z-20 relative">
-              <div className="w-10 h-1 bg-white/20 rounded-full mx-auto -mt-2" />
-              <p className="text-white/50 text-xs uppercase tracking-widest">Where are you sending from?</p>
+              className="bg-[var(--card1)] rounded-t-3xl p-6 space-y-4 shadow-2xl z-20 relative">
+              <div className="w-10 h-1 bg-[var(--s-20)] rounded-full mx-auto -mt-2" />
+              <p className="text-[var(--t-50)] text-xs uppercase tracking-widest">Where are you sending from?</p>
               <AutocompleteInput
                 value={pickupInput}
                 onChange={setPickupInput}
@@ -847,13 +847,13 @@ export default function CustomerDashboard() {
                 </button>
                 <button
                   onClick={() => { setPinCoords(mapCenter); setPinAddr(pickupInput); setPinMode(true); }}
-                  className="flex items-center gap-1.5 text-white/50 text-xs hover:text-white transition-colors">
+                  className="flex items-center gap-1.5 text-[var(--t-50)] text-xs hover:text-[var(--t-100)] transition-colors">
                   🎯 Not quite right? Adjust on map
                 </button>
               </div>
               {error && <p className="text-red-400 text-xs">{error}</p>}
               <button onClick={confirmPickup} disabled={loading || !pickupInput.trim()}
-                className="w-full bg-orange-500 hover:bg-orange-400 disabled:opacity-40 text-white font-semibold py-3.5 rounded-2xl transition-all active:scale-95">
+                className="w-full bg-orange-500 hover:bg-orange-400 disabled:opacity-40 text-[var(--t-100)] font-semibold py-3.5 rounded-2xl transition-all active:scale-95">
                 {loading ? <Spinner /> : 'Set Pickup →'}
               </button>
               {activeDelivery && <button onClick={() => setStep('active')} className="w-full text-orange-400 text-sm text-center">View active delivery →</button>}
@@ -862,20 +862,20 @@ export default function CustomerDashboard() {
 
           {step === 'stops' && (
             <motion.div key="s-stops" initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 80, opacity: 0 }} transition={spring}
-              className="bg-[#1a1a1a] rounded-t-3xl p-6 space-y-3 shadow-2xl max-h-[72vh] overflow-y-auto z-20 relative">
-              <div className="w-10 h-1 bg-white/20 rounded-full mx-auto -mt-2" />
+              className="bg-[var(--card1)] rounded-t-3xl p-6 space-y-3 shadow-2xl max-h-[72vh] overflow-y-auto z-20 relative">
+              <div className="w-10 h-1 bg-[var(--s-20)] rounded-full mx-auto -mt-2" />
               <div className="flex items-center justify-between">
-                <div><p className="text-white font-semibold">Delivery stops</p><p className="text-white/40 text-xs">Up to 5 destinations</p></div>
-                <button onClick={() => setStep('map')} className="text-white/40 hover:text-white text-sm">← Back</button>
+                <div><p className="text-[var(--t-100)] font-semibold">Delivery stops</p><p className="text-[var(--t-40)] text-xs">Up to 5 destinations</p></div>
+                <button onClick={() => setStep('map')} className="text-[var(--t-40)] hover:text-[var(--t-100)] text-sm">← Back</button>
               </div>
               {/* Pickup row with inline "use current location" */}
-              <div className="flex items-center gap-2 bg-[#2a2a2a] rounded-xl px-3 py-2">
+              <div className="flex items-center gap-2 bg-[var(--card2)] rounded-xl px-3 py-2">
                 <span className="text-green-400 text-xs font-bold">FROM</span>
-                <span className="text-white/70 text-sm flex-1 truncate">{pickup?.address}</span>
+                <span className="text-[var(--t-70)] text-sm flex-1 truncate">{pickup?.address}</span>
                 <button onClick={useCurrentLocation} className="text-orange-400 text-xs whitespace-nowrap hover:text-orange-300" title="Use current location">📍</button>
               </div>
               {stops.map((s, i) => (
-                <div key={i} className="space-y-2 bg-[#242424] rounded-2xl p-3">
+                <div key={i} className="space-y-2 bg-[var(--card2)] rounded-2xl p-3">
                   <div className="flex items-center justify-between">
                     <span className="text-orange-400 text-xs font-bold">STOP {i + 1}</span>
                     {stops.length > 1 && <button onClick={() => setStops(p => p.filter((_, j) => j !== i))} className="text-red-400 text-xs">Remove</button>}
@@ -889,9 +889,9 @@ export default function CustomerDashboard() {
                   />
                   <div className="grid grid-cols-2 gap-2">
                     <input value={s.recipientName ?? ''} onChange={e => setStops(p => p.map((x, j) => j === i ? { ...x, recipientName: e.target.value } : x))}
-                      placeholder="Recipient name" className="bg-[#2a2a2a] text-white px-3 py-2 rounded-xl text-xs outline-none placeholder-white/30" />
+                      placeholder="Recipient name" className="bg-[var(--card2)] text-[var(--t-100)] px-3 py-2 rounded-xl text-xs outline-none placeholder-white/30" />
                     <input value={s.recipientPhone ?? ''} onChange={e => setStops(p => p.map((x, j) => j === i ? { ...x, recipientPhone: e.target.value } : x))}
-                      placeholder="Recipient phone" className="bg-[#2a2a2a] text-white px-3 py-2 rounded-xl text-xs outline-none placeholder-white/30" />
+                      placeholder="Recipient phone" className="bg-[var(--card2)] text-[var(--t-100)] px-3 py-2 rounded-xl text-xs outline-none placeholder-white/30" />
                   </div>
                 </div>
               ))}
@@ -903,7 +903,7 @@ export default function CustomerDashboard() {
               )}
               {error && <p className="text-red-400 text-xs">{error}</p>}
               <button onClick={async () => { const ok = await resolveStops(); if (ok) setStep('tier'); }} disabled={loading || !stops[0]?.address.trim()}
-                className="w-full bg-orange-500 hover:bg-orange-400 disabled:opacity-40 text-white font-semibold py-3.5 rounded-2xl transition-all active:scale-95">
+                className="w-full bg-orange-500 hover:bg-orange-400 disabled:opacity-40 text-[var(--t-100)] font-semibold py-3.5 rounded-2xl transition-all active:scale-95">
                 {loading ? <Spinner /> : 'Choose Vehicle →'}
               </button>
             </motion.div>
@@ -911,11 +911,11 @@ export default function CustomerDashboard() {
 
           {step === 'tier' && (
             <motion.div key="s-tier" initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 80, opacity: 0 }} transition={spring}
-              className="bg-[#1a1a1a] rounded-t-3xl p-6 space-y-3 shadow-2xl max-h-[72vh] overflow-y-auto z-20 relative">
-              <div className="w-10 h-1 bg-white/20 rounded-full mx-auto -mt-2" />
+              className="bg-[var(--card1)] rounded-t-3xl p-6 space-y-3 shadow-2xl max-h-[72vh] overflow-y-auto z-20 relative">
+              <div className="w-10 h-1 bg-[var(--s-20)] rounded-full mx-auto -mt-2" />
               <div className="flex items-center justify-between">
-                <div><p className="text-white font-semibold">Vehicle type</p><p className="text-white/40 text-xs">{totalKm.toFixed(1)} km · {stops.length} stop{stops.length > 1 ? 's' : ''}</p></div>
-                <button onClick={() => setStep('stops')} className="text-white/40 hover:text-white text-sm">← Back</button>
+                <div><p className="text-[var(--t-100)] font-semibold">Vehicle type</p><p className="text-[var(--t-40)] text-xs">{totalKm.toFixed(1)} km · {stops.length} stop{stops.length > 1 ? 's' : ''}</p></div>
+                <button onClick={() => setStep('stops')} className="text-[var(--t-40)] hover:text-[var(--t-100)] text-sm">← Back</button>
               </div>
               <div className="space-y-2">
                 {tiers.map(t => {
@@ -923,22 +923,22 @@ export default function CustomerDashboard() {
                   const sel = selectedTier?.tier === t.tier;
                   return (
                     <motion.button key={t.tier} whileTap={{ scale: 0.98 }} onClick={() => setSelectedTier(t)}
-                      className={`w-full flex items-center gap-4 p-4 rounded-2xl border transition-all text-left ${sel ? 'border-orange-500 bg-orange-500/10' : 'border-white/10 bg-[#2a2a2a] hover:border-white/25'}`}>
+                      className={`w-full flex items-center gap-4 p-4 rounded-2xl border transition-all text-left ${sel ? 'border-orange-500 bg-orange-500/10' : 'border-[var(--b-10)] bg-[var(--card2)] hover:border-[var(--b-25)]'}`}>
                       <span className="text-3xl">{t.icon}</span>
                       <div className="flex-1">
-                        <p className="text-white font-semibold text-sm">{t.label}</p>
-                        <p className="text-white/40 text-xs">{t.desc}</p>
+                        <p className="text-[var(--t-100)] font-semibold text-sm">{t.label}</p>
+                        <p className="text-[var(--t-40)] text-xs">{t.desc}</p>
                       </div>
                       <div className="text-right">
                         <p className="text-orange-400 font-bold text-base">{fmt(fare)}</p>
-                        <p className="text-white/30 text-xs">{fmt(t.ratePerKmNgn)}/km</p>
+                        <p className="text-[var(--t-30)] text-xs">{fmt(t.ratePerKmNgn)}/km</p>
                       </div>
                     </motion.button>
                   );
                 })}
               </div>
               <button onClick={() => setStep('photos')} disabled={!selectedTier}
-                className="w-full bg-orange-500 hover:bg-orange-400 disabled:opacity-40 text-white font-semibold py-3.5 rounded-2xl transition-all active:scale-95">
+                className="w-full bg-orange-500 hover:bg-orange-400 disabled:opacity-40 text-[var(--t-100)] font-semibold py-3.5 rounded-2xl transition-all active:scale-95">
                 Add Photos →
               </button>
             </motion.div>
@@ -946,31 +946,31 @@ export default function CustomerDashboard() {
 
           {step === 'photos' && (
             <motion.div key="s-photos" initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 80, opacity: 0 }} transition={spring}
-              className="bg-[#1a1a1a] rounded-t-3xl p-6 space-y-4 shadow-2xl z-20 relative">
-              <div className="w-10 h-1 bg-white/20 rounded-full mx-auto -mt-2" />
+              className="bg-[var(--card1)] rounded-t-3xl p-6 space-y-4 shadow-2xl z-20 relative">
+              <div className="w-10 h-1 bg-[var(--s-20)] rounded-full mx-auto -mt-2" />
               <div className="flex items-center justify-between">
-                <div><p className="text-white font-semibold">Item photos</p><p className="text-white/40 text-xs">Optional · up to 5</p></div>
-                <button onClick={() => setStep('tier')} className="text-white/40 hover:text-white text-sm">← Back</button>
+                <div><p className="text-[var(--t-100)] font-semibold">Item photos</p><p className="text-[var(--t-40)] text-xs">Optional · up to 5</p></div>
+                <button onClick={() => setStep('tier')} className="text-[var(--t-40)] hover:text-[var(--t-100)] text-sm">← Back</button>
               </div>
               <div className="grid grid-cols-4 gap-2">
                 {photoUrls.map((url, i) => (
                   <div key={i} className="relative aspect-square">
                     <img src={url.startsWith('http') ? url : `${SERVER_BASE}${url}`} className="w-full h-full object-cover rounded-xl" alt="" />
-                    <button onClick={() => setPhotoUrls(p => p.filter((_, j) => j !== i))} className="absolute top-1 right-1 bg-black/70 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center">×</button>
+                    <button onClick={() => setPhotoUrls(p => p.filter((_, j) => j !== i))} className="absolute top-1 right-1 bg-black/70 text-[var(--t-100)] rounded-full w-5 h-5 text-xs flex items-center justify-center">×</button>
                   </div>
                 ))}
                 {photoUrls.length < 5 && (
                   <button onClick={() => photoRef.current?.click()} disabled={loading}
-                    className="aspect-square border-2 border-dashed border-white/20 rounded-xl flex flex-col items-center justify-center gap-1 hover:border-orange-400/50 transition-colors">
-                    {loading ? <Spinner /> : <><span className="text-2xl">📷</span><span className="text-white/40 text-xs">Add</span></>}
+                    className="aspect-square border-2 border-dashed border-[var(--b-20)] rounded-xl flex flex-col items-center justify-center gap-1 hover:border-orange-400/50 transition-colors">
+                    {loading ? <Spinner /> : <><span className="text-2xl">📷</span><span className="text-[var(--t-40)] text-xs">Add</span></>}
                   </button>
                 )}
               </div>
               <input ref={photoRef} type="file" accept="image/*" capture="environment" multiple onChange={handlePhotos} className="hidden" />
               <textarea value={itemDesc} onChange={e => setItemDesc(e.target.value)} placeholder="Describe item(s) — e.g. 'Fragile: handle with care'" rows={2}
-                className="w-full bg-[#2a2a2a] text-white px-4 py-3 rounded-xl text-sm outline-none placeholder-white/30 resize-none" />
+                className="w-full bg-[var(--card2)] text-[var(--t-100)] px-4 py-3 rounded-xl text-sm outline-none placeholder-white/30 resize-none" />
               {error && <p className="text-red-400 text-xs">{error}</p>}
-              <button onClick={() => setStep('confirm')} className="w-full bg-orange-500 hover:bg-orange-400 text-white font-semibold py-3.5 rounded-2xl transition-all active:scale-95">
+              <button onClick={() => setStep('confirm')} className="w-full bg-orange-500 hover:bg-orange-400 text-[var(--t-100)] font-semibold py-3.5 rounded-2xl transition-all active:scale-95">
                 Review Booking →
               </button>
             </motion.div>
@@ -978,54 +978,54 @@ export default function CustomerDashboard() {
 
           {step === 'confirm' && (
             <motion.div key="s-confirm" initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 80, opacity: 0 }} transition={spring}
-              className="bg-[#1a1a1a] rounded-t-3xl p-6 space-y-4 shadow-2xl max-h-[78vh] overflow-y-auto z-20 relative">
-              <div className="w-10 h-1 bg-white/20 rounded-full mx-auto -mt-2" />
+              className="bg-[var(--card1)] rounded-t-3xl p-6 space-y-4 shadow-2xl max-h-[78vh] overflow-y-auto z-20 relative">
+              <div className="w-10 h-1 bg-[var(--s-20)] rounded-full mx-auto -mt-2" />
               <div className="flex items-center justify-between">
-                <p className="text-white font-semibold text-base">Confirm booking</p>
-                <button onClick={() => setStep('photos')} className="text-white/40 hover:text-white text-sm">← Back</button>
+                <p className="text-[var(--t-100)] font-semibold text-base">Confirm booking</p>
+                <button onClick={() => setStep('photos')} className="text-[var(--t-40)] hover:text-[var(--t-100)] text-sm">← Back</button>
               </div>
-              <div className="bg-[#2a2a2a] rounded-2xl p-4 space-y-2">
-                <div className="flex items-start gap-2"><span className="text-green-400 mt-0.5 text-xs">⬤</span><p className="text-white/80 text-sm flex-1">{pickup?.address}</p></div>
+              <div className="bg-[var(--card2)] rounded-2xl p-4 space-y-2">
+                <div className="flex items-start gap-2"><span className="text-green-400 mt-0.5 text-xs">⬤</span><p className="text-[var(--t-80)] text-sm flex-1">{pickup?.address}</p></div>
                 {stops.map((s, i) => (
                   <div key={i}>
-                    <div className="ml-1 border-l border-white/10 h-2" />
+                    <div className="ml-1 border-l border-[var(--b-10)] h-2" />
                     <div className="flex items-start gap-2">
                       <span className="text-orange-400 mt-0.5 text-xs">⬤</span>
                       <div className="flex-1">
-                        <p className="text-white/80 text-sm">{s.address}</p>
-                        {s.recipientName && <p className="text-white/40 text-xs">{s.recipientName} · {s.recipientPhone}</p>}
+                        <p className="text-[var(--t-80)] text-sm">{s.address}</p>
+                        {s.recipientName && <p className="text-[var(--t-40)] text-xs">{s.recipientName} · {s.recipientPhone}</p>}
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
               {selectedTier && (
-                <div className="bg-[#2a2a2a] rounded-2xl p-4">
+                <div className="bg-[var(--card2)] rounded-2xl p-4">
                   <div className="flex items-center gap-3 mb-3">
                     <span className="text-2xl">{selectedTier.icon}</span>
-                    <div className="flex-1"><p className="text-white font-medium text-sm">{selectedTier.label}</p><p className="text-white/40 text-xs">{totalKm.toFixed(1)} km total</p></div>
+                    <div className="flex-1"><p className="text-[var(--t-100)] font-medium text-sm">{selectedTier.label}</p><p className="text-[var(--t-40)] text-xs">{totalKm.toFixed(1)} km total</p></div>
                     <button onClick={() => setStep('tier')} className="text-orange-400 text-xs font-medium hover:text-orange-300 whitespace-nowrap">Change →</button>
                   </div>
-                  <div className="space-y-1.5 border-t border-white/10 pt-3">
+                  <div className="space-y-1.5 border-t border-[var(--b-10)] pt-3">
                     {stops.map((s, i) => (
                       <div key={i} className="flex justify-between text-sm">
-                        <span className="text-white/60">Stop {i+1} ({s.distanceKm.toFixed(1)} km)</span>
-                        <span className="text-white">{fmt(calcFare(selectedTier, s.distanceKm || 1))}</span>
+                        <span className="text-[var(--t-60)]">Stop {i+1} ({s.distanceKm.toFixed(1)} km)</span>
+                        <span className="text-[var(--t-100)]">{fmt(calcFare(selectedTier, s.distanceKm || 1))}</span>
                       </div>
                     ))}
-                    <div className="flex justify-between pt-2 border-t border-white/10 font-bold">
-                      <span className="text-white">Total</span>
+                    <div className="flex justify-between pt-2 border-t border-[var(--b-10)] font-bold">
+                      <span className="text-[var(--t-100)]">Total</span>
                       <span className="text-orange-400 text-lg">{fmt(totalFare)}</span>
                     </div>
                   </div>
                 </div>
               )}
               <div>
-                <p className="text-white/40 text-xs uppercase tracking-widest mb-2">Payment method</p>
+                <p className="text-[var(--t-40)] text-xs uppercase tracking-widest mb-2">Payment method</p>
                 <div className="flex gap-2">
                   {(['CASH', 'WALLET'] as const).map(m => (
                     <button key={m} onClick={() => setPayMethod(m)}
-                      className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all ${payMethod === m ? 'bg-orange-500 text-white' : 'bg-[#2a2a2a] text-white/60 hover:text-white'}`}>
+                      className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all ${payMethod === m ? 'bg-orange-500 text-[var(--t-100)]' : 'bg-[var(--card2)] text-[var(--t-60)] hover:text-[var(--t-100)]'}`}>
                       {m === 'CASH' ? '💵 Cash' : `👜 Wallet (${fmt(walletBal)})`}
                     </button>
                   ))}
@@ -1034,12 +1034,12 @@ export default function CustomerDashboard() {
               </div>
               {photoUrls.length > 0 && (
                 <div className="flex gap-2 overflow-x-auto pb-1">
-                  {photoUrls.map((url, i) => <img key={i} src={url.startsWith('http') ? url : `${SERVER_BASE}${url}`} className="w-12 h-12 rounded-lg object-cover flex-shrink-0 border border-white/10" alt="" />)}
+                  {photoUrls.map((url, i) => <img key={i} src={url.startsWith('http') ? url : `${SERVER_BASE}${url}`} className="w-12 h-12 rounded-lg object-cover flex-shrink-0 border border-[var(--b-10)]" alt="" />)}
                 </div>
               )}
               {error && <p className="text-red-400 text-xs">{error}</p>}
               <motion.button whileTap={{ scale: 0.97 }} onClick={book} disabled={loading || (payMethod === 'WALLET' && walletBal < totalFare)}
-                className="w-full bg-orange-500 hover:bg-orange-400 disabled:opacity-40 text-white font-bold py-4 rounded-2xl text-base transition-all shadow-lg shadow-orange-500/20">
+                className="w-full bg-orange-500 hover:bg-orange-400 disabled:opacity-40 text-[var(--t-100)] font-bold py-4 rounded-2xl text-base transition-all shadow-lg shadow-orange-500/20">
                 {loading ? <Spinner /> : `Book Now · ${fmt(totalFare)}`}
               </motion.button>
             </motion.div>
