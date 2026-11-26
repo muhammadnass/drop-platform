@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/lib/api';
 import { fileToResizedBase64 } from '@/lib/image';
+import { useTheme } from '@/contexts/ThemeContext';
 
 function Spinner() { return <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto" />; }
 function fmt(n: number) { return `₦${Math.round(n).toLocaleString()}`; }
@@ -90,6 +91,7 @@ function FundWalletSheet({ onClose, onInitiated }: { onClose: () => void; onInit
 export default function CustomerSettingsPage() {
   const router = useRouter();
   const { user, token, deleteAccount, logout, setUser } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [confirmDelete,    setConfirmDelete]    = useState(false);
   const [busy,             setBusy]             = useState(false);
   const [error,            setError]            = useState('');
@@ -188,6 +190,19 @@ export default function CustomerSettingsPage() {
             className="w-full flex items-center justify-between border border-white/10 text-white/70 font-medium py-3 px-4 rounded-xl hover:bg-white/5 transition-all mt-2">
             Delivery History <span className="text-white/30">→</span>
           </button>
+          {/* Theme toggle */}
+          <div className="flex items-center justify-between border border-white/10 px-4 py-3 rounded-xl">
+            <span className="text-sm font-medium" style={{ color: theme === 'dark' ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.7)' }}>
+              {theme === 'dark' ? '🌙 Dark mode' : '☀️ Light mode'}
+            </span>
+            <button onClick={toggleTheme}
+              className="relative w-12 h-6 rounded-full transition-all duration-300 focus:outline-none"
+              style={{ background: theme === 'dark' ? 'rgba(255,255,255,0.15)' : GRAD }}>
+              <span className="absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all duration-300"
+                style={{ left: theme === 'dark' ? '4px' : '28px' }} />
+            </button>
+          </div>
+
           <button onClick={async () => { await logout(); router.replace('/auth/login'); }}
             className="w-full border border-white/20 text-white/70 font-semibold py-3 rounded-xl hover:bg-white/5 transition-all">
             Log out

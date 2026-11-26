@@ -17,13 +17,24 @@
     --velto-shadow:   rgba(255, 101, 0, 0.30);
     --velto-muted:    rgba(255, 255, 255, 0.55);
   }
+  /* ── Light mode overrides ── */
+  [data-theme="light"] {
+    --velto-dark:    #F5F0EE;
+    --velto-card:    #FFFFFF;
+    --velto-surface: #EDE5E2;
+    --velto-border:  rgba(255, 101, 0, 0.20);
+    --velto-shadow:  rgba(255, 101, 0, 0.18);
+    --velto-muted:   rgba(0, 0, 0, 0.50);
+  }
+
   * { box-sizing: border-box; }
   html, body {
     width: 100%;
     max-width: 100vw;
     overflow-x: hidden;
   }
-  body { background: #0D0808; color: #fff; }
+  body { background: var(--velto-dark); color: #1a0a0a; }
+  [data-theme="dark"] body, :root:not([data-theme="light"]) body { color: #fff; }
 }
 
 @layer utilities {
