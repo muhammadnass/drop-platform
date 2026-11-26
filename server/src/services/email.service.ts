@@ -1,55 +1,54 @@
 // ============================================================
-// VELTO MOBILITY PLATFORM — Email Service (Nodemailer)
-// Sends transactional emails via SMTP (Gmail recommended).
+// VELTO MOBILITY PLATFORM — Email Service (Resend)
+//
+// Previously this sent mail via direct SMTP to Gmail (nodemailer). On
+// Render that connection consistently timed out at the TCP level
+// (ETIMEDOUT on CONN, before any SMTP greeting) — Render's outbound
+// network blocks/restricts raw SMTP ports, a common restriction on
+// shared PaaS infrastructure to stop spam abuse. No SMTP credential was
+// ever going to fix that, because the connection itself never got
+// through. Resend sends mail over a plain HTTPS API call instead, which
+// is never blocked the way SMTP ports are.
 //
 // Required env vars:
-//   SMTP_HOST     e.g. smtp.gmail.com
-//   SMTP_PORT     e.g. 465
-//   SMTP_SECURE   true for 465, false for 587
-//   SMTP_USER     your Gmail address
-//   SMTP_PASS     your Gmail App Password (not your login password)
-//   SMTP_FROM     e.g. "Velto <noreply@veltomobility.com>"
-//   APP_URL       e.g. https://your-app.vercel.app
+//   RESEND_API_KEY   from https://resend.com/api-keys
+//   EMAIL_FROM       e.g. "Velto <noreply@veltomobility.com.ng>" — must be
+//                    on a domain verified in Resend. Until a domain is
+//                    verified, falls back to Resend's shared sandbox
+//                    address (onboarding@resend.dev), which only delivers
+//                    to the email address the Resend account itself was
+//                    signed up with.
+//   APP_URL          e.g. https://app.veltomobility.com.ng
 // ============================================================
 
-import nodemailer from 'nodemailer';
-
-// Explicit timeouts are essential here: several cloud hosts (Render's free
-// tier included) can silently stall outbound SMTP connections rather than
-// refusing them outright. Without these, a stalled connection/greeting/send
-// would hang nodemailer's promise forever, and since sendPasswordResetEmail
-// used to be awaited directly in the request handler, that hang propagated
-// all the way up into a request that never responds (the client just sees
-// a generic "network error" after its own fetch timeout, with no way to
-// tell this apart from a real connectivity problem).
-const CONNECTION_TIMEOUT_MS = 10_000;
-const GREETING_TIMEOUT_MS   = 10_000;
-const SOCKET_TIMEOUT_MS     = 15_000;
-
-const transporter = nodemailer.createTransport({
-  host:   process.env.SMTP_HOST   ?? 'smtp.gmail.com',
-  port:   parseInt(process.env.SMTP_PORT ?? '465'),
-  secure: process.env.SMTP_SECURE !== 'false', // true by default (port 465)
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-  connectionTimeout: CONNECTION_TIMEOUT_MS,
-  greetingTimeout:   GREETING_TIMEOUT_MS,
-  socketTimeout:     SOCKET_TIMEOUT_MS,
-});
-
-const FROM = process.env.SMTP_FROM ?? 'Velto <noreply@veltomobility.com>';
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
+const FROM = process.env.EMAIL_FROM ?? 'Velto <onboarding@resend.dev>';
 const APP_URL = process.env.APP_URL ?? 'http://localhost:3000';
+
+async function sendEmail(to: string, subject: string, html: string, text: string) {
+  if (!RESEND_API_KEY) {
+    throw new Error('RESEND_API_KEY is not set — cannot send email.');
+  }
+
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${RESEND_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ from: FROM, to, subject, html, text }),
+  });
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error(`Resend API error (${res.status}): ${body}`);
+  }
+}
 
 export async function sendPasswordResetEmail(email: string, name: string, token: string) {
   const resetUrl = `${APP_URL}/auth/reset-password?token=${token}`;
 
-  await transporter.sendMail({
-    from:    FROM,
-    to:      email,
-    subject: 'Reset your Velto password',
-    html: `
+  const html = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -99,7 +98,9 @@ export async function sendPasswordResetEmail(email: string, name: string, token:
     </div>
   </div>
 </body>
-</html>`,
-    text: `Hi ${name},\n\nReset your Velto password by visiting:\n${resetUrl}\n\nThis link expires in 1 hour.\n\nIf you did not request this, ignore this email.\n\nVelto Mobility Platform Limited`,
-  });
+</html>`;
+
+  const text = `Hi ${name},\n\nReset your Velto password by visiting:\n${resetUrl}\n\nThis link expires in 1 hour.\n\nIf you did not request this, ignore this email.\n\nVelto Mobility Platform Limited`;
+
+  await sendEmail(email, 'Reset your Velto password', html, text);
 }
