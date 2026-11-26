@@ -25,21 +25,25 @@ import { customerRouter } from './routes/customer.routes';
 import { errorHandler }   from './middleware/error.middleware';
 import { authMiddleware } from './middleware/auth.middleware';
 
-const PORT        = parseInt(process.env.PORT ?? '4000', 10);
-const CORS_ORIGIN = process.env.CORS_ORIGIN ?? 'http://localhost:3000';
+const PORT = parseInt(process.env.PORT ?? '4000', 10);
+
+// Support comma-separated origins e.g. "https://app.veltomobility.com.ng,https://drop-platform-6ri5.vercel.app"
+const rawOrigins  = process.env.CORS_ORIGIN ?? 'http://localhost:3000';
+const CORS_ORIGINS = rawOrigins.split(',').map((o) => o.trim()).filter(Boolean);
+const corsOrigin  = CORS_ORIGINS.length === 1 ? CORS_ORIGINS[0] : CORS_ORIGINS;
 
 const app        = express();
 const httpServer = createServer(app);
 
 export const io = new SocketIOServer(httpServer, {
-  cors: { origin: CORS_ORIGIN, methods: ['GET', 'POST'], credentials: true },
+  cors: { origin: corsOrigin, methods: ['GET', 'POST'], credentials: true },
   pingInterval: parseInt(process.env.SOCKET_PING_INTERVAL ?? '10000'),
   pingTimeout:  parseInt(process.env.SOCKET_PING_TIMEOUT  ?? '5000'),
 });
 
 // ── Global Middleware ─────────────────────────────────────────
 app.use(helmet({ contentSecurityPolicy: false }));
-app.use(cors({ origin: CORS_ORIGIN, credentials: true }));
+app.use(cors({ origin: corsOrigin, credentials: true }));
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
 // Raw body needed for Paystack webhook signature verification
